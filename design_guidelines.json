@@ -1,0 +1,143 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "Pasal Sathi (Shop Friend)",
+      "tone": "Trustworthy, Simple, Tactile, Traditional yet Modern",
+      "archetype": "Organic & Earthy (Archetype 1)",
+      "core_values": ["Simplicity", "Speed", "Familiarity"]
+    },
+    "typography": {
+      "font_family": {
+        "english_heading": "Manrope, sans-serif",
+        "english_body": "Inter, sans-serif",
+        "nepali": "Noto Sans Devanagari, sans-serif"
+      },
+      "scale": {
+        "h1": "text-3xl font-bold tracking-tight",
+        "h2": "text-2xl font-semibold tracking-tight",
+        "h3": "text-xl font-semibold",
+        "body_lg": "text-lg leading-relaxed",
+        "body_base": "text-base leading-normal",
+        "caption": "text-sm text-muted-foreground"
+      }
+    },
+    "colors": {
+      "palette": {
+        "primary": "#8B0000",
+        "primary_foreground": "#FFFFFF",
+        "secondary": "#D4AF37",
+        "secondary_foreground": "#1A1A1A",
+        "background": "#F9F9F5",
+        "surface": "#FFFFFF",
+        "surface_subtle": "#F0F0E8",
+        "text_main": "#2D2D2D",
+        "text_muted": "#666666",
+        "border": "#E5E5E0",
+        "success": "#15803D",
+        "warning": "#B45309",
+        "error": "#DC2626"
+      },
+      "usage": {
+        "primary": "Main actions (Save, Sell), Active states, Branding",
+        "secondary": "Highlights, Price tags, Premium items (Brass)",
+        "background": "Global app background (Warm Rice Paper)",
+        "surface": "Cards, Modals, Bottom Sheets"
+      }
+    },
+    "layout": {
+      "spacing": {
+        "container_padding": "p-4 md:p-6",
+        "section_gap": "gap-6",
+        "item_gap": "gap-3"
+      },
+      "grid": {
+        "dashboard": "grid grid-cols-2 gap-4",
+        "inventory": "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4",
+        "numpad": "grid grid-cols-3 gap-2"
+      },
+      "radius": {
+        "default": "rounded-xl",
+        "button": "rounded-full",
+        "card": "rounded-2xl"
+      }
+    },
+    "components": {
+      "buttons": {
+        "primary": "bg-[#8B0000] text-white hover:bg-[#6B0000] h-12 text-lg font-medium shadow-md active:scale-95 transition-transform",
+        "secondary": "bg-[#F0F0E8] text-[#2D2D2D] hover:bg-[#E5E5E0] h-12 text-lg font-medium border border-[#E5E5E0]",
+        "icon": "p-3 rounded-full bg-white shadow-sm border border-gray-100"
+      },
+      "cards": {
+        "product": "bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col items-center text-center",
+        "category": "relative overflow-hidden aspect-square flex items-end p-4 bg-gray-100 group cursor-pointer"
+      },
+      "inputs": {
+        "default": "h-12 text-lg border-gray-300 focus:border-[#8B0000] focus:ring-[#8B0000] rounded-lg bg-white",
+        "numpad_display": "text-4xl font-bold text-center bg-transparent border-none focus:ring-0 w-full py-4"
+      }
+    },
+    "motion": {
+      "micro_interactions": "active:scale-95 transition-transform duration-100",
+      "page_transition": "animate-in fade-in slide-in-from-bottom-4 duration-300",
+      "list_stagger": "animate-in fade-in slide-in-from-bottom-2 duration-300"
+    }
+  },
+  "assets": {
+    "images": {
+      "categories": {
+        "steel_utensils": {
+          "url": "https://images.unsplash.com/photo-1554843361-5a41d2e91c18",
+          "alt": "Steel Utensils Pile"
+        },
+        "brass_religious": {
+          "url": "https://images.unsplash.com/photo-1576173478758-2ada6f4aa9e2",
+          "alt": "Brass Religious Items"
+        },
+        "pressure_cookers": {
+          "url": "https://images.unsplash.com/photo-1604414499020-f9ac575bc5ec",
+          "alt": "Pressure Cookers"
+        },
+        "plastic_goods": {
+          "url": "https://images.unsplash.com/photo-1724155593482-bc0c29c8a990",
+          "alt": "Colorful Plastic Items"
+        },
+        "cleaning_tools": {
+          "url": "https://images.unsplash.com/photo-1760368105255-0e9560755b6a",
+          "alt": "Brooms and Mops"
+        }
+      }
+    },
+    "icons": {
+      "library": "lucide-react",
+      "mapping": {
+        "dashboard": "LayoutGrid",
+        "inventory": "Package",
+        "sales": "IndianRupee",
+        "reports": "FileText",
+        "settings": "Settings",
+        "add": "Plus",
+        "search": "Search",
+        "filter": "Filter",
+        "scan": "ScanBarcode"
+      }
+    }
+  },
+  "implementation_guide": {
+    "steps": [
+      "1. Setup Tailwind theme with the defined color palette and fonts.",
+      "2. Create the 'Layout' component with a bottom navigation bar for mobile.",
+      "3. Build the 'VisualCategoryGrid' component using the provided image URLs.",
+      "4. Implement the 'Numpad' component for quick quantity/price entry.",
+      "5. Develop the 'ProductCard' component with bilingual text support.",
+      "6. Create the 'Dashboard' with quick stats and 'Quick Sale' FAB (Floating Action Button)."
+    ],
+    "universal_rules": [
+      "Use 'Manrope' for all English headings and 'Noto Sans Devanagari' for Nepali text.",
+      "Ensure all touch targets are at least 48x48px.",
+      "Use high contrast for text (WCAG AA compliant).",
+      "Avoid complex gradients; stick to solid, warm colors.",
+      "All interactive elements must have `data-testid` attributes.",
+      "Use 'sonner' for toast notifications (e.g., 'Sale Recorded!')."
+    ]
+  }
+}
