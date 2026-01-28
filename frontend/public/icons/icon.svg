@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="102" fill="#8B0000"/>
+  <g transform="translate(256, 256)">
+    <!-- Shop/Store icon -->
+    <path d="M-100 -60 L-100 80 L100 80 L100 -60" fill="none" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Roof -->
+    <path d="M-120 -60 L0 -120 L120 -60" fill="none" stroke="white" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Door -->
+    <rect x="-30" y="10" width="60" height="70" rx="8" fill="white" opacity="0.9"/>
+    <!-- Window left -->
+    <rect x="-85" y="-30" width="40" height="40" rx="6" fill="none" stroke="white" stroke-width="12"/>
+    <!-- Window right -->
+    <rect x="45" y="-30" width="40" height="40" rx="6" fill="none" stroke="white" stroke-width="12"/>
+  </g>
+</svg>
