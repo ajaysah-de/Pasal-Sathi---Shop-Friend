@@ -70,7 +70,15 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 
 ---
 
-## What's Been Implemented (December 2025)
+## What's Been Implemented (January 2025)
+
+### AI Stock Scanner (NEW)
+- **Quick Count Mode**: Fast item counting from photos
+- **Smart Scan Mode**: Identifies items, counts, matches with inventory, suggests updates
+- **GPT-4o Vision**: Powered by OpenAI via Emergent LLM Key
+- **Automatic Stock Update**: One-click update inventory from scan results
+- **Location Detection**: AI identifies where items are (shelf_top, hanging, etc.)
+- **Scan History**: All scans saved for reference
 
 ### Authentication System
 - PIN-based setup and login
