@@ -1,21 +1,30 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  TrendingUp, Package, AlertTriangle, ShoppingCart, 
-  Plus, ArrowRight, IndianRupee, Clock, ScanLine, Camera
-} from 'lucide-react';
-import Layout from '../components/Layout';
-import { useAuth } from '../context/AuthContext';
-import { formatNPR, formatTime, CATEGORIES } from '../lib/utils';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import {
+  TrendingUp,
+  Package,
+  AlertTriangle,
+  ShoppingCart,
+  Plus,
+  ArrowRight,
+  IndianRupee,
+  Clock,
+  ScanLine,
+  Camera,
+} from "lucide-react";
+import Layout from "../components/Layout";
+import { useAuth } from "../context/AuthContext";
+import { formatNPR, formatTime, CATEGORIES } from "../lib/utils";
+import { toast } from "sonner";
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API_BASE = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, "") || "";
+const API = `${API_BASE}/api`;
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { getAuthHeader } = useAuth();
-  
+
   const [stats, setStats] = useState(null);
   const [todaySales, setTodaySales] = useState(null);
   const [lowStockItems, setLowStockItems] = useState([]);
@@ -30,15 +39,15 @@ export default function Dashboard() {
       const [statsRes, salesRes, alertsRes] = await Promise.all([
         axios.get(`${API}/dashboard/stats`, getAuthHeader()),
         axios.get(`${API}/sales/today`, getAuthHeader()),
-        axios.get(`${API}/alerts/low-stock`, getAuthHeader())
+        axios.get(`${API}/alerts/low-stock`, getAuthHeader()),
       ]);
-      
+
       setStats(statsRes.data);
       setTodaySales(salesRes.data);
       setLowStockItems(alertsRes.data);
     } catch (err) {
-      console.error('Dashboard fetch error:', err);
-      toast.error('Failed to load dashboard / डाटा लोड गर्न सकिएन');
+      console.error("Dashboard fetch error:", err);
+      toast.error("Failed to load dashboard / डाटा लोड गर्न सकिएन");
     } finally {
       setLoading(false);
     }
@@ -104,18 +113,24 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div 
+          <div
             className="stats-card cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => navigate('/inventory?filter=low-stock')}
+            onClick={() => navigate("/inventory?filter=low-stock")}
             data-testid="low-stock-stat"
           >
             <div className="flex items-center gap-2 mb-2">
-              <div className={`p-2 rounded-lg ${lowStockItems.length > 0 ? 'bg-red-100' : 'bg-gray-100'}`}>
-                <AlertTriangle className={`w-4 h-4 ${lowStockItems.length > 0 ? 'text-red-700' : 'text-gray-500'}`} />
+              <div
+                className={`p-2 rounded-lg ${lowStockItems.length > 0 ? "bg-red-100" : "bg-gray-100"}`}
+              >
+                <AlertTriangle
+                  className={`w-4 h-4 ${lowStockItems.length > 0 ? "text-red-700" : "text-gray-500"}`}
+                />
               </div>
               <span className="text-sm text-gray-500">Low Stock / कम स्टक</span>
             </div>
-            <p className={`text-2xl font-bold ${lowStockItems.length > 0 ? 'text-red-600' : 'text-[#2D2D2D]'}`}>
+            <p
+              className={`text-2xl font-bold ${lowStockItems.length > 0 ? "text-red-600" : "text-[#2D2D2D]"}`}
+            >
               {stats?.low_stock_count || 0}
             </p>
             <p className="text-xs text-gray-400 mt-1">items need restock</p>
@@ -129,16 +144,16 @@ export default function Dashboard() {
           </h2>
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => navigate('/sale')}
+              onClick={() => navigate("/sale")}
               className="quick-action bg-[#8B0000] text-white hover:bg-[#6B0000]"
               data-testid="quick-new-sale"
             >
               <ShoppingCart className="w-6 h-6 mb-2" />
               <span className="font-medium">New Sale / नयाँ बिक्री</span>
             </button>
-            
+
             <button
-              onClick={() => navigate('/inventory/add')}
+              onClick={() => navigate("/inventory/add")}
               className="quick-action"
               data-testid="quick-add-product"
             >
@@ -164,7 +179,7 @@ export default function Dashboard() {
               </p>
             </div>
             <button
-              onClick={() => navigate('/scanner')}
+              onClick={() => navigate("/scanner")}
               className="px-4 py-3 bg-white text-[#8B0000] rounded-xl font-bold flex items-center gap-2 active:scale-95 transition-transform"
               data-testid="quick-scanner"
             >
@@ -178,32 +193,56 @@ export default function Dashboard() {
         {todaySales?.recent?.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Recent Sales / हालको बिक्री</h2>
-              <button 
-                onClick={() => navigate('/reports')}
+              <h2 className="text-lg font-semibold">
+                Recent Sales / हालको बिक्री
+              </h2>
+              <button
+                onClick={() => navigate("/reports")}
                 className="flex items-center text-sm text-[#8B0000] font-medium"
               >
                 View All <ArrowRight className="w-4 h-4 ml-1" />
               </button>
             </div>
-            
+
             <div className="space-y-2">
               {todaySales.recent.slice(0, 3).map((sale) => (
-                <div key={sale.id} className="sale-item" data-testid={`recent-sale-${sale.id}`}>
+                <div
+                  key={sale.id}
+                  className="sale-item"
+                  data-testid={`recent-sale-${sale.id}`}
+                >
                   <div className="flex-1">
                     <p className="font-medium text-[#2D2D2D]">
-                      {sale.items.map(i => i.product_name).join(', ').slice(0, 30)}
-                      {sale.items.map(i => i.product_name).join(', ').length > 30 ? '...' : ''}
+                      {sale.items
+                        .map((i) => i.product_name)
+                        .join(", ")
+                        .slice(0, 30)}
+                      {sale.items.map((i) => i.product_name).join(", ").length >
+                      30
+                        ? "..."
+                        : ""}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <Clock className="w-3 h-3 text-gray-400" />
-                      <span className="text-xs text-gray-400">{formatTime(sale.created_at)}</span>
-                      <span className={sale.payment_type === 'cash' ? 'cash-badge' : 'credit-badge'}>
-                        {sale.payment_type === 'cash' ? 'Cash / नगद' : 'Credit / उधारो'}
+                      <span className="text-xs text-gray-400">
+                        {formatTime(sale.created_at)}
+                      </span>
+                      <span
+                        className={
+                          sale.payment_type === "cash"
+                            ? "cash-badge"
+                            : "credit-badge"
+                        }
+                      >
+                        {sale.payment_type === "cash"
+                          ? "Cash / नगद"
+                          : "Credit / उधारो"}
                       </span>
                     </div>
                   </div>
-                  <p className="font-bold text-[#8B0000]">{formatNPR(sale.total)}</p>
+                  <p className="font-bold text-[#8B0000]">
+                    {formatNPR(sale.total)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -218,23 +257,25 @@ export default function Dashboard() {
                 <AlertTriangle className="w-5 h-5" />
                 Low Stock Alert / कम स्टक
               </h2>
-              <button 
-                onClick={() => navigate('/inventory?filter=low-stock')}
+              <button
+                onClick={() => navigate("/inventory?filter=low-stock")}
                 className="flex items-center text-sm text-[#8B0000] font-medium"
               >
                 View All <ArrowRight className="w-4 h-4 ml-1" />
               </button>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-2">
               {lowStockItems.slice(0, 4).map((product) => (
-                <div 
+                <div
                   key={product.id}
                   className="bg-red-50 border border-red-100 rounded-xl p-3 cursor-pointer"
                   onClick={() => navigate(`/inventory/${product.id}`)}
                   data-testid={`low-stock-item-${product.id}`}
                 >
-                  <p className="font-medium text-[#2D2D2D] truncate">{product.name_en}</p>
+                  <p className="font-medium text-[#2D2D2D] truncate">
+                    {product.name_en}
+                  </p>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-gray-500 font-nepali">
                       {CATEGORIES[product.category]?.name_np}
@@ -264,7 +305,7 @@ export default function Dashboard() {
               <span className="font-nepali">पहिलो सामान थप्नुहोस्</span>
             </p>
             <button
-              onClick={() => navigate('/inventory/add')}
+              onClick={() => navigate("/inventory/add")}
               className="px-6 py-3 bg-[#8B0000] text-white rounded-xl font-medium active:scale-95 transition-transform"
             >
               Add First Product / पहिलो सामान

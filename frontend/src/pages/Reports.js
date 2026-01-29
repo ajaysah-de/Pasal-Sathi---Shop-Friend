@@ -1,34 +1,43 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { 
-  FileText, Download, Calendar, TrendingUp, 
-  Package, ShoppingCart, Filter, ChevronDown
-} from 'lucide-react';
-import Layout from '../components/Layout';
-import Modal from '../components/Modal';
-import { useAuth } from '../context/AuthContext';
-import { formatNPR, formatDate, formatTime } from '../lib/utils';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import {
+  FileText,
+  Download,
+  Calendar,
+  TrendingUp,
+  Package,
+  ShoppingCart,
+  Filter,
+  ChevronDown,
+} from "lucide-react";
+import Layout from "../components/Layout";
+import Modal from "../components/Modal";
+import { useAuth } from "../context/AuthContext";
+import { formatNPR, formatDate, formatTime } from "../lib/utils";
+import { toast } from "sonner";
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API_BASE = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, "") || "";
+const API = `${API_BASE}/api`;
 
 export default function Reports() {
   const { getAuthHeader, token } = useAuth();
-  
-  const [activeTab, setActiveTab] = useState('sales');
+
+  const [activeTab, setActiveTab] = useState("sales");
   const [sales, setSales] = useState([]);
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 7);
-    return d.toISOString().split('T')[0];
+    return d.toISOString().split("T")[0];
   });
-  const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
+  const [dateTo, setDateTo] = useState(
+    () => new Date().toISOString().split("T")[0],
+  );
   const [loading, setLoading] = useState(true);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    if (activeTab === 'sales') {
+    if (activeTab === "sales") {
       fetchSales();
     }
   }, [activeTab, dateFrom, dateTo]);
@@ -40,25 +49,29 @@ export default function Reports() {
       fromDate.setHours(0, 0, 0, 0);
       const toDate = new Date(dateTo);
       toDate.setHours(23, 59, 59, 999);
-      
+
       const res = await axios.get(`${API}/sales`, {
         ...getAuthHeader(),
         params: {
           date_from: fromDate.toISOString(),
-          date_to: toDate.toISOString()
-        }
+          date_to: toDate.toISOString(),
+        },
       });
       setSales(res.data);
     } catch (err) {
-      toast.error('Failed to load sales');
+      toast.error("Failed to load sales");
     } finally {
       setLoading(false);
     }
   };
 
   const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
-  const cashSales = sales.filter(s => s.payment_type === 'cash').reduce((sum, s) => sum + s.total, 0);
-  const creditSales = sales.filter(s => s.payment_type === 'credit').reduce((sum, s) => sum + s.total, 0);
+  const cashSales = sales
+    .filter((s) => s.payment_type === "cash")
+    .reduce((sum, s) => sum + s.total, 0);
+  const creditSales = sales
+    .filter((s) => s.payment_type === "credit")
+    .reduce((sum, s) => sum + s.total, 0);
 
   const handleExport = async (type, format) => {
     setExporting(true);
@@ -67,38 +80,38 @@ export default function Reports() {
       fromDate.setHours(0, 0, 0, 0);
       const toDate = new Date(dateTo);
       toDate.setHours(23, 59, 59, 999);
-      
-      let url = '';
-      let filename = '';
-      
-      if (type === 'sales') {
+
+      let url = "";
+      let filename = "";
+
+      if (type === "sales") {
         url = `${API}/reports/sales/${format}?date_from=${fromDate.toISOString()}&date_to=${toDate.toISOString()}`;
-        filename = `sales_report_${dateFrom}_${dateTo}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+        filename = `sales_report_${dateFrom}_${dateTo}.${format === "excel" ? "xlsx" : "pdf"}`;
       } else {
         url = `${API}/reports/inventory/${format}`;
-        filename = `inventory_report.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+        filename = `inventory_report.${format === "excel" ? "xlsx" : "pdf"}`;
       }
-      
+
       const res = await axios.get(url, {
         ...getAuthHeader(),
-        responseType: 'blob'
+        responseType: "blob",
       });
-      
+
       const blob = new Blob([res.data]);
       const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = downloadUrl;
       a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(downloadUrl);
-      
-      toast.success('Report downloaded! / रिपोर्ट डाउनलोड भयो!');
+
+      toast.success("Report downloaded! / रिपोर्ट डाउनलोड भयो!");
       setShowExportModal(false);
     } catch (err) {
-      console.error('Export error:', err);
-      toast.error('Failed to export report');
+      console.error("Export error:", err);
+      toast.error("Failed to export report");
     } finally {
       setExporting(false);
     }
@@ -123,9 +136,9 @@ export default function Reports() {
         {/* Tabs */}
         <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
           <button
-            onClick={() => setActiveTab('sales')}
+            onClick={() => setActiveTab("sales")}
             className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'sales' ? 'bg-white shadow-sm' : 'text-gray-500'
+              activeTab === "sales" ? "bg-white shadow-sm" : "text-gray-500"
             }`}
             data-testid="tab-sales"
           >
@@ -133,9 +146,9 @@ export default function Reports() {
             Sales
           </button>
           <button
-            onClick={() => setActiveTab('inventory')}
+            onClick={() => setActiveTab("inventory")}
             className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'inventory' ? 'bg-white shadow-sm' : 'text-gray-500'
+              activeTab === "inventory" ? "bg-white shadow-sm" : "text-gray-500"
             }`}
             data-testid="tab-inventory"
           >
@@ -145,10 +158,12 @@ export default function Reports() {
         </div>
 
         {/* Date Filter */}
-        {activeTab === 'sales' && (
+        {activeTab === "sales" && (
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">From / देखि</label>
+              <label className="text-xs text-gray-500 mb-1 block">
+                From / देखि
+              </label>
               <input
                 type="date"
                 value={dateFrom}
@@ -158,7 +173,9 @@ export default function Reports() {
               />
             </div>
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">To / सम्म</label>
+              <label className="text-xs text-gray-500 mb-1 block">
+                To / सम्म
+              </label>
               <input
                 type="date"
                 value={dateTo}
@@ -171,21 +188,27 @@ export default function Reports() {
         )}
 
         {/* Sales Tab Content */}
-        {activeTab === 'sales' && (
+        {activeTab === "sales" && (
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-white rounded-xl p-3 border border-gray-100">
                 <p className="text-xs text-gray-500">Total / जम्मा</p>
-                <p className="text-lg font-bold text-[#2D2D2D]">{formatNPR(totalSales)}</p>
+                <p className="text-lg font-bold text-[#2D2D2D]">
+                  {formatNPR(totalSales)}
+                </p>
               </div>
               <div className="bg-green-50 rounded-xl p-3 border border-green-100">
                 <p className="text-xs text-green-600">Cash / नगद</p>
-                <p className="text-lg font-bold text-green-700">{formatNPR(cashSales)}</p>
+                <p className="text-lg font-bold text-green-700">
+                  {formatNPR(cashSales)}
+                </p>
               </div>
               <div className="bg-orange-50 rounded-xl p-3 border border-orange-100">
                 <p className="text-xs text-orange-600">Credit / उधारो</p>
-                <p className="text-lg font-bold text-orange-700">{formatNPR(creditSales)}</p>
+                <p className="text-lg font-bold text-orange-700">
+                  {formatNPR(creditSales)}
+                </p>
               </div>
             </div>
 
@@ -196,28 +219,52 @@ export default function Reports() {
               </div>
             ) : sales.length > 0 ? (
               <div className="space-y-2">
-                <p className="text-sm text-gray-500">{sales.length} transactions</p>
+                <p className="text-sm text-gray-500">
+                  {sales.length} transactions
+                </p>
                 {sales.map((sale) => (
-                  <div key={sale.id} className="bg-white rounded-xl p-3 border border-gray-100" data-testid={`sale-row-${sale.id}`}>
+                  <div
+                    key={sale.id}
+                    className="bg-white rounded-xl p-3 border border-gray-100"
+                    data-testid={`sale-row-${sale.id}`}
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <p className="text-sm font-medium text-[#2D2D2D]">
-                          {sale.items.map(i => `${i.product_name} ×${i.quantity}`).join(', ').slice(0, 40)}
-                          {sale.items.map(i => `${i.product_name} ×${i.quantity}`).join(', ').length > 40 ? '...' : ''}
+                          {sale.items
+                            .map((i) => `${i.product_name} ×${i.quantity}`)
+                            .join(", ")
+                            .slice(0, 40)}
+                          {sale.items
+                            .map((i) => `${i.product_name} ×${i.quantity}`)
+                            .join(", ").length > 40
+                            ? "..."
+                            : ""}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                          {formatDate(sale.created_at)} at {formatTime(sale.created_at)}
+                          {formatDate(sale.created_at)} at{" "}
+                          {formatTime(sale.created_at)}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-[#8B0000]">{formatNPR(sale.total)}</p>
-                        <span className={sale.payment_type === 'cash' ? 'cash-badge' : 'credit-badge'}>
+                        <p className="font-bold text-[#8B0000]">
+                          {formatNPR(sale.total)}
+                        </p>
+                        <span
+                          className={
+                            sale.payment_type === "cash"
+                              ? "cash-badge"
+                              : "credit-badge"
+                          }
+                        >
                           {sale.payment_type}
                         </span>
                       </div>
                     </div>
                     {sale.customer_name && (
-                      <p className="text-xs text-gray-500">Customer: {sale.customer_name}</p>
+                      <p className="text-xs text-gray-500">
+                        Customer: {sale.customer_name}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -232,16 +279,21 @@ export default function Reports() {
         )}
 
         {/* Inventory Tab Content */}
-        {activeTab === 'inventory' && (
+        {activeTab === "inventory" && (
           <div className="space-y-3">
-            <div className="report-card" onClick={() => handleExport('inventory', 'excel')}>
+            <div
+              className="report-card"
+              onClick={() => handleExport("inventory", "excel")}
+            >
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-green-100 rounded-xl">
                   <Package className="w-6 h-6 text-green-700" />
                 </div>
                 <div>
                   <h3 className="font-semibold">Full Inventory Report</h3>
-                  <p className="text-sm text-gray-500">Download complete stock list</p>
+                  <p className="text-sm text-gray-500">
+                    Download complete stock list
+                  </p>
                 </div>
               </div>
             </div>
@@ -256,14 +308,18 @@ export default function Reports() {
           titleNp="रिपोर्ट निकाल्नु"
         >
           <div className="space-y-3">
-            <p className="text-sm text-gray-500 mb-4">Choose report type and format:</p>
-            
+            <p className="text-sm text-gray-500 mb-4">
+              Choose report type and format:
+            </p>
+
             <div className="space-y-2">
               <h4 className="font-medium">Sales Report / बिक्री रिपोर्ट</h4>
-              <p className="text-xs text-gray-400">{dateFrom} to {dateTo}</p>
+              <p className="text-xs text-gray-400">
+                {dateFrom} to {dateTo}
+              </p>
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => handleExport('sales', 'excel')}
+                  onClick={() => handleExport("sales", "excel")}
                   disabled={exporting}
                   className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium"
                   data-testid="export-sales-excel"
@@ -271,7 +327,7 @@ export default function Reports() {
                   📊 Excel
                 </button>
                 <button
-                  onClick={() => handleExport('sales', 'pdf')}
+                  onClick={() => handleExport("sales", "pdf")}
                   disabled={exporting}
                   className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 font-medium"
                   data-testid="export-sales-pdf"
@@ -285,7 +341,7 @@ export default function Reports() {
               <h4 className="font-medium">Inventory Report / सामान रिपोर्ट</h4>
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => handleExport('inventory', 'excel')}
+                  onClick={() => handleExport("inventory", "excel")}
                   disabled={exporting}
                   className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium"
                   data-testid="export-inventory-excel"

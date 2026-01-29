@@ -834,10 +834,22 @@ async def root():
 # Include router and middleware
 app.include_router(api_router)
 
+# CORS configuration - support both environment variable and production URLs
+cors_origins = os.environ.get('CORS_ORIGINS', '*')
+if cors_origins == '*':
+    # Default production origins if not set
+    allowed_origins = [
+        "https://pasal-sathi-shop-friend.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173"
+    ]
+else:
+    allowed_origins = [origin.strip() for origin in cors_origins.split(',')]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

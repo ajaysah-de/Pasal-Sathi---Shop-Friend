@@ -1,17 +1,29 @@
-import { useState, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  Camera, X, Zap, Brain, RefreshCw, Check, 
-  AlertTriangle, Package, ArrowLeft, Image as ImageIcon,
-  ScanLine, ChevronRight, Plus, Edit3
-} from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import Modal from '../components/Modal';
-import { formatNPR, CATEGORIES, LOCATIONS } from '../lib/utils';
-import { toast } from 'sonner';
+import { useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import {
+  Camera,
+  X,
+  Zap,
+  Brain,
+  RefreshCw,
+  Check,
+  AlertTriangle,
+  Package,
+  ArrowLeft,
+  Image as ImageIcon,
+  ScanLine,
+  ChevronRight,
+  Plus,
+  Edit3,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import Modal from "../components/Modal";
+import { formatNPR, CATEGORIES, LOCATIONS } from "../lib/utils";
+import { toast } from "sonner";
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API_BASE = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, "") || "";
+const API = `${API_BASE}/api`;
 
 export default function Scanner() {
   const navigate = useNavigate();
@@ -20,7 +32,7 @@ export default function Scanner() {
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const [mode, setMode] = useState('smart'); // 'quick' or 'smart'
+  const [mode, setMode] = useState("smart"); // 'quick' or 'smart'
   const [isStreaming, setIsStreaming] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const [scanning, setScanning] = useState(false);
@@ -35,15 +47,19 @@ export default function Scanner() {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setIsStreaming(true);
       }
     } catch (err) {
-      console.error('Camera error:', err);
-      toast.error('Could not access camera. Please allow camera permission.');
+      console.error("Camera error:", err);
+      toast.error("Could not access camera. Please allow camera permission.");
     }
   };
 
@@ -51,7 +67,7 @@ export default function Scanner() {
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
       const tracks = videoRef.current.srcObject.getTracks();
-      tracks.forEach(track => track.stop());
+      tracks.forEach((track) => track.stop());
       videoRef.current.srcObject = null;
       setIsStreaming(false);
     }
@@ -60,17 +76,17 @@ export default function Scanner() {
   // Capture image from camera
   const captureImage = () => {
     if (!videoRef.current || !canvasRef.current) return;
-    
+
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
-    const ctx = canvas.getContext('2d');
+
+    const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0);
-    
-    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+
+    const imageData = canvas.toDataURL("image/jpeg", 0.8);
     setCapturedImage(imageData);
     stopCamera();
   };
@@ -79,12 +95,12 @@ export default function Scanner() {
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
       return;
     }
-    
+
     const reader = new FileReader();
     reader.onload = (event) => {
       setCapturedImage(event.target.result);
@@ -95,57 +111,63 @@ export default function Scanner() {
   // Analyze image with AI
   const analyzeImage = async () => {
     if (!capturedImage) {
-      toast.error('Please capture or select an image first');
+      toast.error("Please capture or select an image first");
       return;
     }
 
     setScanning(true);
-    
+
     try {
       // Extract base64 data (remove data:image/jpeg;base64, prefix)
-      const base64Data = capturedImage.split(',')[1];
-      
-      const res = await axios.post(`${API}/scan/analyze`, {
-        image_base64: base64Data,
-        mode: mode
-      }, getAuthHeader());
-      
+      const base64Data = capturedImage.split(",")[1];
+
+      const res = await axios.post(
+        `${API}/scan/analyze`,
+        {
+          image_base64: base64Data,
+          mode: mode,
+        },
+        getAuthHeader(),
+      );
+
       setScanResult(res.data);
       setShowResults(true);
-      
+
       // Initialize selected updates for matched products
       const updates = {};
-      res.data.matched_products.forEach(match => {
+      res.data.matched_products.forEach((match) => {
         updates[match.product_id] = {
           selected: true,
-          new_quantity: match.detected_count
+          new_quantity: match.detected_count,
         };
       });
       setSelectedUpdates(updates);
-      
+
       // Initialize new products (items not matched)
-      const matchedNames = new Set(res.data.matched_products.map(m => m.detected_name.toLowerCase()));
+      const matchedNames = new Set(
+        res.data.matched_products.map((m) => m.detected_name.toLowerCase()),
+      );
       const newProds = {};
       res.data.detected_items.forEach((item, idx) => {
         if (!matchedNames.has(item.name.toLowerCase())) {
           newProds[`new_${idx}`] = {
             selected: false,
             name_en: item.name,
-            name_np: item.name_np || '',
-            category: item.category || 'other',
-            location: item.location_hint || 'shelf_top',
+            name_np: item.name_np || "",
+            category: item.category || "other",
+            location: item.location_hint || "shelf_top",
             quantity: item.count,
-            selling_price: '',
-            cost_price: ''
+            selling_price: "",
+            cost_price: "",
           };
         }
       });
       setNewProducts(newProds);
-      
+
       toast.success(`Found ${res.data.total_items_counted} items!`);
     } catch (err) {
-      console.error('Scan error:', err);
-      toast.error(err.response?.data?.detail || 'Failed to analyze image');
+      console.error("Scan error:", err);
+      toast.error(err.response?.data?.detail || "Failed to analyze image");
     } finally {
       setScanning(false);
     }
@@ -157,11 +179,11 @@ export default function Scanner() {
       .filter(([_, data]) => data.selected)
       .map(([productId, data]) => ({
         product_id: productId,
-        new_quantity: data.new_quantity
+        new_quantity: data.new_quantity,
       }));
-    
+
     if (updates.length === 0) {
-      toast.error('No items selected for update');
+      toast.error("No items selected for update");
       return;
     }
 
@@ -172,7 +194,7 @@ export default function Scanner() {
       setScanResult(null);
       setCapturedImage(null);
     } catch (err) {
-      toast.error('Failed to update stock');
+      toast.error("Failed to update stock");
     }
   };
 
@@ -180,26 +202,30 @@ export default function Scanner() {
   const addNewProduct = async (key) => {
     const product = newProducts[key];
     if (!product.selling_price) {
-      toast.error('Please enter selling price / बिक्री मूल्य हाल्नुहोस्');
+      toast.error("Please enter selling price / बिक्री मूल्य हाल्नुहोस्");
       return;
     }
 
     try {
-      await axios.post(`${API}/products`, {
-        name_en: product.name_en,
-        name_np: product.name_np,
-        category: product.category,
-        location: product.location,
-        quantity: product.quantity,
-        selling_price: parseFloat(product.selling_price),
-        cost_price: parseFloat(product.cost_price) || 0,
-        low_stock_threshold: 5
-      }, getAuthHeader());
-      
+      await axios.post(
+        `${API}/products`,
+        {
+          name_en: product.name_en,
+          name_np: product.name_np,
+          category: product.category,
+          location: product.location,
+          quantity: product.quantity,
+          selling_price: parseFloat(product.selling_price),
+          cost_price: parseFloat(product.cost_price) || 0,
+          low_stock_threshold: 5,
+        },
+        getAuthHeader(),
+      );
+
       toast.success(`Added: ${product.name_en}`);
-      
+
       // Remove from new products list
-      setNewProducts(prev => {
+      setNewProducts((prev) => {
         const updated = { ...prev };
         delete updated[key];
         return updated;
@@ -207,18 +233,18 @@ export default function Scanner() {
       setShowAddProduct(false);
       setEditingNewProduct(null);
     } catch (err) {
-      toast.error('Failed to add product');
+      toast.error("Failed to add product");
     }
   };
 
   // Update new product field
   const updateNewProduct = (key, field, value) => {
-    setNewProducts(prev => ({
+    setNewProducts((prev) => ({
       ...prev,
       [key]: {
         ...prev[key],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
@@ -232,22 +258,22 @@ export default function Scanner() {
   };
 
   const toggleUpdate = (productId) => {
-    setSelectedUpdates(prev => ({
+    setSelectedUpdates((prev) => ({
       ...prev,
       [productId]: {
         ...prev[productId],
-        selected: !prev[productId]?.selected
-      }
+        selected: !prev[productId]?.selected,
+      },
     }));
   };
 
   const updateQuantity = (productId, quantity) => {
-    setSelectedUpdates(prev => ({
+    setSelectedUpdates((prev) => ({
       ...prev,
       [productId]: {
         ...prev[productId],
-        new_quantity: parseInt(quantity) || 0
-      }
+        new_quantity: parseInt(quantity) || 0,
+      },
     }));
   };
 
@@ -271,7 +297,9 @@ export default function Scanner() {
                 <ScanLine className="w-5 h-5 text-[#8B0000]" />
                 AI Stock Scanner
               </h1>
-              <p className="text-xs text-gray-500 font-nepali">AI स्टक स्क्यानर</p>
+              <p className="text-xs text-gray-500 font-nepali">
+                AI स्टक स्क्यानर
+              </p>
             </div>
           </div>
         </div>
@@ -283,46 +311,51 @@ export default function Scanner() {
           <h3 className="font-semibold mb-3">Scan Mode / स्क्यान मोड</h3>
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => setMode('quick')}
+              onClick={() => setMode("quick")}
               className={`p-4 rounded-xl border-2 transition-all ${
-                mode === 'quick' 
-                  ? 'border-[#8B0000] bg-red-50' 
-                  : 'border-gray-200'
+                mode === "quick"
+                  ? "border-[#8B0000] bg-red-50"
+                  : "border-gray-200"
               }`}
               data-testid="mode-quick"
             >
-              <Zap className={`w-6 h-6 mx-auto mb-2 ${mode === 'quick' ? 'text-[#8B0000]' : 'text-gray-400'}`} />
+              <Zap
+                className={`w-6 h-6 mx-auto mb-2 ${mode === "quick" ? "text-[#8B0000]" : "text-gray-400"}`}
+              />
               <p className="font-medium">Quick Count</p>
               <p className="text-xs text-gray-500">छिटो गणना</p>
             </button>
-            
+
             <button
-              onClick={() => setMode('smart')}
+              onClick={() => setMode("smart")}
               className={`p-4 rounded-xl border-2 transition-all ${
-                mode === 'smart' 
-                  ? 'border-[#8B0000] bg-red-50' 
-                  : 'border-gray-200'
+                mode === "smart"
+                  ? "border-[#8B0000] bg-red-50"
+                  : "border-gray-200"
               }`}
               data-testid="mode-smart"
             >
-              <Brain className={`w-6 h-6 mx-auto mb-2 ${mode === 'smart' ? 'text-[#8B0000]' : 'text-gray-400'}`} />
+              <Brain
+                className={`w-6 h-6 mx-auto mb-2 ${mode === "smart" ? "text-[#8B0000]" : "text-gray-400"}`}
+              />
               <p className="font-medium">Smart Scan</p>
               <p className="text-xs text-gray-500">स्मार्ट स्क्यान</p>
             </button>
           </div>
-          
+
           <p className="mt-3 text-sm text-gray-500">
-            {mode === 'quick' 
-              ? 'Quick count mode: AI counts all visible items fast'
-              : 'Smart scan mode: AI identifies, counts, and matches with your inventory'
-            }
+            {mode === "quick"
+              ? "Quick count mode: AI counts all visible items fast"
+              : "Smart scan mode: AI identifies, counts, and matches with your inventory"}
           </p>
         </div>
 
         {/* Camera/Image Section */}
         <div className="bg-white rounded-xl p-4 border border-gray-100">
-          <h3 className="font-semibold mb-3">Capture Image / तस्वीर लिनुहोस्</h3>
-          
+          <h3 className="font-semibold mb-3">
+            Capture Image / तस्वीर लिनुहोस्
+          </h3>
+
           {/* Video Preview */}
           {isStreaming && (
             <div className="relative mb-4">
@@ -381,7 +414,7 @@ export default function Scanner() {
                 <Camera className="w-5 h-5" />
                 Open Camera
               </button>
-              
+
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="flex items-center justify-center gap-2 p-4 bg-gray-100 text-gray-700 rounded-xl font-medium"
@@ -390,7 +423,7 @@ export default function Scanner() {
                 <ImageIcon className="w-5 h-5" />
                 Upload Photo
               </button>
-              
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -427,7 +460,9 @@ export default function Scanner() {
 
         {/* Tips */}
         <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-          <h4 className="font-medium text-yellow-800 mb-2">Tips for best results:</h4>
+          <h4 className="font-medium text-yellow-800 mb-2">
+            Tips for best results:
+          </h4>
           <ul className="text-sm text-yellow-700 space-y-1">
             <li>• Good lighting helps AI count accurately</li>
             <li>• Keep camera steady while taking photo</li>
@@ -456,46 +491,62 @@ export default function Scanner() {
                   <p className="font-bold text-green-800 text-xl">
                     {scanResult.total_items_counted} items found
                   </p>
-                  <p className="text-sm text-green-600">{scanResult.scan_notes}</p>
+                  <p className="text-sm text-green-600">
+                    {scanResult.scan_notes}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Detected Items */}
             <div>
-              <h4 className="font-semibold mb-2">Detected Items / पत्ता लागेका सामान</h4>
+              <h4 className="font-semibold mb-2">
+                Detected Items / पत्ता लागेका सामान
+              </h4>
               <div className="space-y-2">
                 {scanResult.detected_items.map((item, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
                   >
                     <div>
                       <p className="font-medium">{item.name}</p>
-                      {item.name_np && <p className="text-sm text-gray-500 font-nepali">{item.name_np}</p>}
+                      {item.name_np && (
+                        <p className="text-sm text-gray-500 font-nepali">
+                          {item.name_np}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
-                        <span 
+                        <span
                           className="text-xs px-2 py-0.5 rounded"
-                          style={{ 
-                            backgroundColor: `${CATEGORIES[item.category]?.color}20`, 
-                            color: CATEGORIES[item.category]?.color 
+                          style={{
+                            backgroundColor: `${CATEGORIES[item.category]?.color}20`,
+                            color: CATEGORIES[item.category]?.color,
                           }}
                         >
                           {CATEGORIES[item.category]?.name_np || item.category}
                         </span>
                         {item.location_hint && (
                           <span className="text-xs text-gray-400">
-                            {LOCATIONS[item.location_hint]?.name_np || item.location_hint}
+                            {LOCATIONS[item.location_hint]?.name_np ||
+                              item.location_hint}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold text-[#8B0000]">{item.count}</p>
-                      <p className={`text-xs ${
-                        item.confidence === 'high' ? 'text-green-600' :
-                        item.confidence === 'medium' ? 'text-yellow-600' : 'text-red-600'
-                      }`}>
+                      <p className="text-xl font-bold text-[#8B0000]">
+                        {item.count}
+                      </p>
+                      <p
+                        className={`text-xs ${
+                          item.confidence === "high"
+                            ? "text-green-600"
+                            : item.confidence === "medium"
+                              ? "text-yellow-600"
+                              : "text-red-600"
+                        }`}
+                      >
                         {item.confidence} confidence
                       </p>
                     </div>
@@ -516,59 +567,75 @@ export default function Scanner() {
                 </p>
                 <div className="space-y-2">
                   {scanResult.matched_products.map((match) => {
-                    const currentNewQty = selectedUpdates[match.product_id]?.new_quantity ?? match.detected_count;
+                    const currentNewQty =
+                      selectedUpdates[match.product_id]?.new_quantity ??
+                      match.detected_count;
                     const willChange = currentNewQty !== match.current_stock;
-                    
+
                     return (
-                    <div 
-                      key={match.product_id}
-                      className={`p-3 rounded-xl border-2 transition-colors ${
-                        selectedUpdates[match.product_id]?.selected
-                          ? 'border-[#8B0000] bg-red-50'
-                          : 'border-gray-200 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedUpdates[match.product_id]?.selected || false}
-                          onChange={() => toggleUpdate(match.product_id)}
-                          className="w-5 h-5 accent-[#8B0000]"
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium">{match.product_name}</p>
-                          <div className="flex items-center gap-2 text-sm mt-1">
-                            <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-600">
-                              Current: {match.current_stock}
+                      <div
+                        key={match.product_id}
+                        className={`p-3 rounded-xl border-2 transition-colors ${
+                          selectedUpdates[match.product_id]?.selected
+                            ? "border-[#8B0000] bg-red-50"
+                            : "border-gray-200 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={
+                              selectedUpdates[match.product_id]?.selected ||
+                              false
+                            }
+                            onChange={() => toggleUpdate(match.product_id)}
+                            className="w-5 h-5 accent-[#8B0000]"
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium">{match.product_name}</p>
+                            <div className="flex items-center gap-2 text-sm mt-1">
+                              <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-600">
+                                Current: {match.current_stock}
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-gray-400" />
+                              {willChange ? (
+                                <span
+                                  className={`px-2 py-0.5 rounded font-medium ${
+                                    currentNewQty > match.current_stock
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-red-100 text-red-700"
+                                  }`}
+                                >
+                                  New: {currentNewQty} (
+                                  {currentNewQty > match.current_stock
+                                    ? "+"
+                                    : ""}
+                                  {currentNewQty - match.current_stock})
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-500">
+                                  No change
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs text-gray-400 mb-1">
+                              New Stock
                             </span>
-                            <ChevronRight className="w-4 h-4 text-gray-400" />
-                            {willChange ? (
-                              <span className={`px-2 py-0.5 rounded font-medium ${
-                                currentNewQty > match.current_stock 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'bg-red-100 text-red-700'
-                              }`}>
-                                New: {currentNewQty} ({currentNewQty > match.current_stock ? '+' : ''}{currentNewQty - match.current_stock})
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-500">
-                                No change
-                              </span>
-                            )}
+                            <input
+                              type="number"
+                              value={currentNewQty}
+                              onChange={(e) =>
+                                updateQuantity(match.product_id, e.target.value)
+                              }
+                              className="w-20 h-10 text-center border-2 border-[#8B0000] rounded-lg font-bold text-[#8B0000]"
+                            />
                           </div>
                         </div>
-                        <div className="flex flex-col items-center">
-                          <span className="text-xs text-gray-400 mb-1">New Stock</span>
-                          <input
-                            type="number"
-                            value={currentNewQty}
-                            onChange={(e) => updateQuantity(match.product_id, e.target.value)}
-                            className="w-20 h-10 text-center border-2 border-[#8B0000] rounded-lg font-bold text-[#8B0000]"
-                          />
-                        </div>
                       </div>
-                    </div>
-                  )})}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -581,29 +648,37 @@ export default function Scanner() {
                   New Items Found / नयाँ सामान भेटियो ({unmatchedItems.length})
                 </h4>
                 <p className="text-sm text-gray-500 mb-2">
-                  These items are not in your inventory. Add them as new products:
+                  These items are not in your inventory. Add them as new
+                  products:
                 </p>
                 <div className="space-y-2">
                   {unmatchedItems.map(([key, product]) => (
-                    <div 
+                    <div
                       key={key}
                       className="p-3 rounded-xl border-2 border-blue-200 bg-blue-50"
                     >
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">{product.name_en}</p>
-                          {product.name_np && <p className="text-sm text-gray-500 font-nepali">{product.name_np}</p>}
+                          {product.name_np && (
+                            <p className="text-sm text-gray-500 font-nepali">
+                              {product.name_np}
+                            </p>
+                          )}
                           <div className="flex items-center gap-2 mt-1">
-                            <span 
+                            <span
                               className="text-xs px-2 py-0.5 rounded"
-                              style={{ 
-                                backgroundColor: `${CATEGORIES[product.category]?.color}20`, 
-                                color: CATEGORIES[product.category]?.color 
+                              style={{
+                                backgroundColor: `${CATEGORIES[product.category]?.color}20`,
+                                color: CATEGORIES[product.category]?.color,
                               }}
                             >
-                              {CATEGORIES[product.category]?.name_np || product.category}
+                              {CATEGORIES[product.category]?.name_np ||
+                                product.category}
                             </span>
-                            <span className="text-xs text-gray-500">Qty: {product.quantity}</span>
+                            <span className="text-xs text-gray-500">
+                              Qty: {product.quantity}
+                            </span>
                           </div>
                         </div>
                         <button
@@ -627,24 +702,30 @@ export default function Scanner() {
             {/* Action Buttons */}
             <div className="pt-4 border-t space-y-2">
               {/* Update Stock Button - Only for MATCHED products */}
-              {scanResult.matched_products.length > 0 && Object.values(selectedUpdates).some(u => u.selected) && (
-                <button
-                  onClick={applyUpdates}
-                  className="w-full p-3 bg-[#8B0000] text-white rounded-xl font-medium flex items-center justify-center gap-2"
-                  data-testid="apply-updates-btn"
-                >
-                  <RefreshCw className="w-5 h-5" />
-                  Update {Object.values(selectedUpdates).filter(u => u.selected).length} Existing Product(s)
-                </button>
-              )}
-              
+              {scanResult.matched_products.length > 0 &&
+                Object.values(selectedUpdates).some((u) => u.selected) && (
+                  <button
+                    onClick={applyUpdates}
+                    className="w-full p-3 bg-[#8B0000] text-white rounded-xl font-medium flex items-center justify-center gap-2"
+                    data-testid="apply-updates-btn"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                    Update{" "}
+                    {
+                      Object.values(selectedUpdates).filter((u) => u.selected)
+                        .length
+                    }{" "}
+                    Existing Product(s)
+                  </button>
+                )}
+
               {/* Info text */}
               {unmatchedItems.length > 0 && (
                 <p className="text-xs text-center text-gray-500">
                   Click "Add" next to new items above to add them to inventory
                 </p>
               )}
-              
+
               <button
                 onClick={() => setShowResults(false)}
                 className="w-full p-3 bg-gray-100 text-gray-700 rounded-xl font-medium"
@@ -669,67 +750,111 @@ export default function Scanner() {
         {editingNewProduct && newProducts[editingNewProduct] && (
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Product Name (English)</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Product Name (English)
+              </label>
               <input
                 type="text"
                 value={newProducts[editingNewProduct].name_en}
-                onChange={(e) => updateNewProduct(editingNewProduct, 'name_en', e.target.value)}
+                onChange={(e) =>
+                  updateNewProduct(editingNewProduct, "name_en", e.target.value)
+                }
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl"
               />
             </div>
 
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">नाम (नेपाली)</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                नाम (नेपाली)
+              </label>
               <input
                 type="text"
                 value={newProducts[editingNewProduct].name_np}
-                onChange={(e) => updateNewProduct(editingNewProduct, 'name_np', e.target.value)}
+                onChange={(e) =>
+                  updateNewProduct(editingNewProduct, "name_np", e.target.value)
+                }
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl font-nepali"
               />
             </div>
 
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Category / वर्ग</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Category / वर्ग
+              </label>
               <select
                 value={newProducts[editingNewProduct].category}
-                onChange={(e) => updateNewProduct(editingNewProduct, 'category', e.target.value)}
+                onChange={(e) =>
+                  updateNewProduct(
+                    editingNewProduct,
+                    "category",
+                    e.target.value,
+                  )
+                }
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl bg-white"
               >
                 {Object.entries(CATEGORIES).map(([id, cat]) => (
-                  <option key={id} value={id}>{cat.name_en} / {cat.name_np}</option>
+                  <option key={id} value={id}>
+                    {cat.name_en} / {cat.name_np}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Location / स्थान</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Location / स्थान
+              </label>
               <select
                 value={newProducts[editingNewProduct].location}
-                onChange={(e) => updateNewProduct(editingNewProduct, 'location', e.target.value)}
+                onChange={(e) =>
+                  updateNewProduct(
+                    editingNewProduct,
+                    "location",
+                    e.target.value,
+                  )
+                }
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl bg-white"
               >
                 {Object.entries(LOCATIONS).map(([id, loc]) => (
-                  <option key={id} value={id}>{loc.name_en} / {loc.name_np}</option>
+                  <option key={id} value={id}>
+                    {loc.name_en} / {loc.name_np}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm text-gray-500 mb-1 block">Quantity / संख्या</label>
+                <label className="text-sm text-gray-500 mb-1 block">
+                  Quantity / संख्या
+                </label>
                 <input
                   type="number"
                   value={newProducts[editingNewProduct].quantity}
-                  onChange={(e) => updateNewProduct(editingNewProduct, 'quantity', parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateNewProduct(
+                      editingNewProduct,
+                      "quantity",
+                      parseInt(e.target.value) || 0,
+                    )
+                  }
                   className="w-full h-12 px-4 border border-gray-300 rounded-xl"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-500 mb-1 block">Cost Price / खरिद मूल्य</label>
+                <label className="text-sm text-gray-500 mb-1 block">
+                  Cost Price / खरिद मूल्य
+                </label>
                 <input
                   type="number"
                   value={newProducts[editingNewProduct].cost_price}
-                  onChange={(e) => updateNewProduct(editingNewProduct, 'cost_price', e.target.value)}
+                  onChange={(e) =>
+                    updateNewProduct(
+                      editingNewProduct,
+                      "cost_price",
+                      e.target.value,
+                    )
+                  }
                   placeholder="0"
                   className="w-full h-12 px-4 border border-gray-300 rounded-xl"
                 />
@@ -737,11 +862,19 @@ export default function Scanner() {
             </div>
 
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Selling Price * / बिक्री मूल्य</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Selling Price * / बिक्री मूल्य
+              </label>
               <input
                 type="number"
                 value={newProducts[editingNewProduct].selling_price}
-                onChange={(e) => updateNewProduct(editingNewProduct, 'selling_price', e.target.value)}
+                onChange={(e) =>
+                  updateNewProduct(
+                    editingNewProduct,
+                    "selling_price",
+                    e.target.value,
+                  )
+                }
                 placeholder="Enter price..."
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl"
                 data-testid="new-product-price"

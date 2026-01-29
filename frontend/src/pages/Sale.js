@@ -1,34 +1,43 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  Search, ShoppingCart, Plus, Minus, X, Trash2, 
-  CreditCard, Banknote, Check, Package
-} from 'lucide-react';
-import Layout from '../components/Layout';
-import Modal from '../components/Modal';
-import Numpad from '../components/Numpad';
-import { useAuth } from '../context/AuthContext';
-import { formatNPR, CATEGORIES } from '../lib/utils';
-import { toast } from 'sonner';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import {
+  Search,
+  ShoppingCart,
+  Plus,
+  Minus,
+  X,
+  Trash2,
+  CreditCard,
+  Banknote,
+  Check,
+  Package,
+} from "lucide-react";
+import Layout from "../components/Layout";
+import Modal from "../components/Modal";
+import Numpad from "../components/Numpad";
+import { useAuth } from "../context/AuthContext";
+import { formatNPR, CATEGORIES } from "../lib/utils";
+import { toast } from "sonner";
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API_BASE = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, "") || "";
+const API = `${API_BASE}/api`;
 
 export default function Sale() {
   const navigate = useNavigate();
   const { getAuthHeader } = useAuth();
-  
+
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [cart, setCart] = useState([]);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showNumpad, setShowNumpad] = useState(false);
-  const [numpadValue, setNumpadValue] = useState('');
+  const [numpadValue, setNumpadValue] = useState("");
   const [numpadProduct, setNumpadProduct] = useState(null);
-  const [discount, setDiscount] = useState('0');
-  const [paymentType, setPaymentType] = useState('cash');
-  const [customerName, setCustomerName] = useState('');
+  const [discount, setDiscount] = useState("0");
+  const [paymentType, setPaymentType] = useState("cash");
+  const [customerName, setCustomerName] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -39,10 +48,13 @@ export default function Sale() {
   useEffect(() => {
     if (search.trim()) {
       const searchLower = search.toLowerCase();
-      setFilteredProducts(products.filter(p => 
-        p.name_en.toLowerCase().includes(searchLower) ||
-        p.name_np?.toLowerCase().includes(searchLower)
-      ));
+      setFilteredProducts(
+        products.filter(
+          (p) =>
+            p.name_en.toLowerCase().includes(searchLower) ||
+            p.name_np?.toLowerCase().includes(searchLower),
+        ),
+      );
     } else {
       setFilteredProducts(products);
     }
@@ -54,51 +66,66 @@ export default function Sale() {
       setProducts(res.data);
       setFilteredProducts(res.data);
     } catch (err) {
-      toast.error('Failed to load products');
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
   };
 
   const addToCart = (product, qty = 1) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.product_id === product.id);
+    setCart((prev) => {
+      const existing = prev.find((item) => item.product_id === product.id);
       if (existing) {
-        return prev.map(item =>
+        return prev.map((item) =>
           item.product_id === product.id
-            ? { ...item, quantity: item.quantity + qty, total: (item.quantity + qty) * item.unit_price }
-            : item
+            ? {
+                ...item,
+                quantity: item.quantity + qty,
+                total: (item.quantity + qty) * item.unit_price,
+              }
+            : item,
         );
       }
-      return [...prev, {
-        product_id: product.id,
-        product_name: product.name_en,
-        quantity: qty,
-        unit_price: product.selling_price,
-        total: qty * product.selling_price
-      }];
+      return [
+        ...prev,
+        {
+          product_id: product.id,
+          product_name: product.name_en,
+          quantity: qty,
+          unit_price: product.selling_price,
+          total: qty * product.selling_price,
+        },
+      ];
     });
     toast.success(`Added ${product.name_en}`);
   };
 
   const updateCartQty = (productId, change) => {
-    setCart(prev => prev.map(item => {
-      if (item.product_id === productId) {
-        const newQty = Math.max(0, item.quantity + change);
-        if (newQty === 0) return null;
-        return { ...item, quantity: newQty, total: newQty * item.unit_price };
-      }
-      return item;
-    }).filter(Boolean));
+    setCart((prev) =>
+      prev
+        .map((item) => {
+          if (item.product_id === productId) {
+            const newQty = Math.max(0, item.quantity + change);
+            if (newQty === 0) return null;
+            return {
+              ...item,
+              quantity: newQty,
+              total: newQty * item.unit_price,
+            };
+          }
+          return item;
+        })
+        .filter(Boolean),
+    );
   };
 
   const removeFromCart = (productId) => {
-    setCart(prev => prev.filter(item => item.product_id !== productId));
+    setCart((prev) => prev.filter((item) => item.product_id !== productId));
   };
 
   const openNumpad = (product) => {
     setNumpadProduct(product);
-    setNumpadValue('1');
+    setNumpadValue("1");
     setShowNumpad(true);
   };
 
@@ -109,7 +136,7 @@ export default function Sale() {
     }
     setShowNumpad(false);
     setNumpadProduct(null);
-    setNumpadValue('');
+    setNumpadValue("");
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
@@ -118,30 +145,34 @@ export default function Sale() {
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
-      toast.error('Cart is empty / कार्ट खाली छ');
+      toast.error("Cart is empty / कार्ट खाली छ");
       return;
     }
 
     setSubmitting(true);
-    
+
     try {
-      await axios.post(`${API}/sales`, {
-        items: cart,
-        subtotal,
-        discount: discountAmount,
-        total,
-        payment_type: paymentType,
-        customer_name: customerName || null
-      }, getAuthHeader());
-      
-      toast.success('Sale recorded! / बिक्री सफल!');
+      await axios.post(
+        `${API}/sales`,
+        {
+          items: cart,
+          subtotal,
+          discount: discountAmount,
+          total,
+          payment_type: paymentType,
+          customer_name: customerName || null,
+        },
+        getAuthHeader(),
+      );
+
+      toast.success("Sale recorded! / बिक्री सफल!");
       setCart([]);
-      setDiscount('0');
-      setCustomerName('');
+      setDiscount("0");
+      setCustomerName("");
       setShowCheckout(false);
       fetchProducts(); // Refresh stock
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to record sale');
+      toast.error(err.response?.data?.detail || "Failed to record sale");
     } finally {
       setSubmitting(false);
     }
@@ -162,7 +193,7 @@ export default function Sale() {
             data-testid="sale-search-input"
           />
           {search && (
-            <button onClick={() => setSearch('')}>
+            <button onClick={() => setSearch("")}>
               <X className="w-5 h-5 text-gray-400" />
             </button>
           )}
@@ -180,10 +211,15 @@ export default function Sale() {
                 key={product.id}
                 className="bg-white rounded-xl p-3 border border-gray-100 cursor-pointer active:scale-95 transition-transform"
                 onClick={() => addToCart(product)}
-                onContextMenu={(e) => { e.preventDefault(); openNumpad(product); }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  openNumpad(product);
+                }}
                 data-testid={`sale-product-${product.id}`}
               >
-                <p className="font-medium text-[#2D2D2D] truncate text-sm">{product.name_en}</p>
+                <p className="font-medium text-[#2D2D2D] truncate text-sm">
+                  {product.name_en}
+                </p>
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-xs text-gray-400 font-nepali">
                     {CATEGORIES[product.category]?.name_np}
@@ -193,11 +229,16 @@ export default function Sale() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between mt-2">
-                  <span className={`text-xs ${product.quantity <= product.low_stock_threshold ? 'text-red-500' : 'text-gray-400'}`}>
+                  <span
+                    className={`text-xs ${product.quantity <= product.low_stock_threshold ? "text-red-500" : "text-gray-400"}`}
+                  >
                     Stock: {product.quantity}
                   </span>
                   <button
-                    onClick={(e) => { e.stopPropagation(); openNumpad(product); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openNumpad(product);
+                    }}
                     className="p-1 bg-gray-100 rounded-lg"
                     data-testid={`qty-btn-${product.id}`}
                   >
@@ -224,9 +265,11 @@ export default function Sale() {
                 <ShoppingCart className="w-5 h-5 text-[#8B0000]" />
                 <span className="font-semibold">{cart.length} items</span>
               </div>
-              <span className="text-xl font-bold text-[#8B0000]">{formatNPR(subtotal)}</span>
+              <span className="text-xl font-bold text-[#8B0000]">
+                {formatNPR(subtotal)}
+              </span>
             </div>
-            
+
             <button
               onClick={() => setShowCheckout(true)}
               className="w-full h-12 bg-[#8B0000] text-white font-semibold rounded-xl active:scale-95 transition-transform"
@@ -238,8 +281,8 @@ export default function Sale() {
         )}
 
         {/* Numpad Modal */}
-        <Modal 
-          isOpen={showNumpad} 
+        <Modal
+          isOpen={showNumpad}
           onClose={() => setShowNumpad(false)}
           title="Enter Quantity"
           titleNp="संख्या हाल्नुहोस्"
@@ -247,10 +290,12 @@ export default function Sale() {
           {numpadProduct && (
             <div className="mb-4 p-3 bg-gray-50 rounded-xl">
               <p className="font-semibold">{numpadProduct.name_en}</p>
-              <p className="text-sm text-gray-500">{formatNPR(numpadProduct.selling_price)} each</p>
+              <p className="text-sm text-gray-500">
+                {formatNPR(numpadProduct.selling_price)} each
+              </p>
             </div>
           )}
-          <Numpad 
+          <Numpad
             value={numpadValue}
             onChange={setNumpadValue}
             onConfirm={handleNumpadConfirm}
@@ -269,13 +314,20 @@ export default function Sale() {
             {/* Cart Items */}
             <div className="max-h-48 overflow-y-auto space-y-2">
               {cart.map((item) => (
-                <div key={item.product_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <div
+                  key={item.product_id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+                >
                   <div className="flex-1">
                     <p className="font-medium text-sm">{item.product_name}</p>
-                    <p className="text-xs text-gray-500">{formatNPR(item.unit_price)} × {item.quantity}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatNPR(item.unit_price)} × {item.quantity}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-[#8B0000]">{formatNPR(item.total)}</span>
+                    <span className="font-bold text-[#8B0000]">
+                      {formatNPR(item.total)}
+                    </span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => updateCartQty(item.product_id, -1)}
@@ -283,7 +335,9 @@ export default function Sale() {
                       >
                         <Minus className="w-4 h-4" />
                       </button>
-                      <span className="w-8 text-center font-medium">{item.quantity}</span>
+                      <span className="w-8 text-center font-medium">
+                        {item.quantity}
+                      </span>
                       <button
                         onClick={() => updateCartQty(item.product_id, 1)}
                         className="p-1 bg-gray-200 rounded-lg"
@@ -304,7 +358,9 @@ export default function Sale() {
 
             {/* Discount */}
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Discount / छुट (Rs.)</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Discount / छुट (Rs.)
+              </label>
               <input
                 type="number"
                 value={discount}
@@ -316,7 +372,9 @@ export default function Sale() {
 
             {/* Customer Name (for credit) */}
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Customer Name / ग्राहकको नाम</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Customer Name / ग्राहकको नाम
+              </label>
               <input
                 type="text"
                 value={customerName}
@@ -329,14 +387,16 @@ export default function Sale() {
 
             {/* Payment Type */}
             <div>
-              <label className="text-sm text-gray-500 mb-2 block">Payment / भुक्तानी</label>
+              <label className="text-sm text-gray-500 mb-2 block">
+                Payment / भुक्तानी
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => setPaymentType('cash')}
+                  onClick={() => setPaymentType("cash")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-colors ${
-                    paymentType === 'cash'
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-100 text-gray-600'
+                    paymentType === "cash"
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-100 text-gray-600"
                   }`}
                   data-testid="payment-cash"
                 >
@@ -344,11 +404,11 @@ export default function Sale() {
                   Cash / नगद
                 </button>
                 <button
-                  onClick={() => setPaymentType('credit')}
+                  onClick={() => setPaymentType("credit")}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-colors ${
-                    paymentType === 'credit'
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-gray-100 text-gray-600'
+                    paymentType === "credit"
+                      ? "bg-orange-500 text-white"
+                      : "bg-gray-100 text-gray-600"
                   }`}
                   data-testid="payment-credit"
                 >

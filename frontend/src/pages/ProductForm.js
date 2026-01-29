@@ -1,15 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  ArrowLeft, Save, Trash2, Package, MapPin, 
-  IndianRupee, Hash, AlertTriangle, Truck
-} from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { CATEGORIES, LOCATIONS, formatNPR } from '../lib/utils';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
+import {
+  ArrowLeft,
+  Save,
+  Trash2,
+  Package,
+  MapPin,
+  IndianRupee,
+  Hash,
+  AlertTriangle,
+  Truck,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { CATEGORIES, LOCATIONS, formatNPR } from "../lib/utils";
+import { toast } from "sonner";
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API_BASE = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, "") || "";
+const API = `${API_BASE}/api`;
 
 export default function ProductForm() {
   const navigate = useNavigate();
@@ -20,18 +28,18 @@ export default function ProductForm() {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
-  
+
   const [form, setForm] = useState({
-    name_en: '',
-    name_np: '',
-    category: 'steel',
-    location: 'shelf_top',
-    cost_price: '',
-    selling_price: '',
-    quantity: '',
-    quantity_type: 'exact',
-    low_stock_threshold: '5',
-    supplier_id: ''
+    name_en: "",
+    name_np: "",
+    category: "steel",
+    location: "shelf_top",
+    cost_price: "",
+    selling_price: "",
+    quantity: "",
+    quantity_type: "exact",
+    low_stock_threshold: "5",
+    supplier_id: "",
   });
 
   useEffect(() => {
@@ -46,7 +54,7 @@ export default function ProductForm() {
       const res = await axios.get(`${API}/suppliers`, getAuthHeader());
       setSuppliers(res.data);
     } catch (err) {
-      console.error('Failed to fetch suppliers:', err);
+      console.error("Failed to fetch suppliers:", err);
     }
   };
 
@@ -56,49 +64,49 @@ export default function ProductForm() {
       const p = res.data;
       setForm({
         name_en: p.name_en,
-        name_np: p.name_np || '',
+        name_np: p.name_np || "",
         category: p.category,
         location: p.location,
-        cost_price: p.cost_price?.toString() || '',
+        cost_price: p.cost_price?.toString() || "",
         selling_price: p.selling_price.toString(),
         quantity: p.quantity.toString(),
         quantity_type: p.quantity_type,
         low_stock_threshold: p.low_stock_threshold.toString(),
-        supplier_id: p.supplier_id || ''
+        supplier_id: p.supplier_id || "",
       });
     } catch (err) {
-      toast.error('Product not found');
-      navigate('/inventory');
+      toast.error("Product not found");
+      navigate("/inventory");
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (field, value) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const calculateMargin = () => {
     const cost = parseFloat(form.cost_price) || 0;
     const sell = parseFloat(form.selling_price) || 0;
     if (cost === 0 || sell === 0) return null;
-    return ((sell - cost) / cost * 100).toFixed(1);
+    return (((sell - cost) / cost) * 100).toFixed(1);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!form.name_en.trim()) {
-      toast.error('Product name is required');
+      toast.error("Product name is required");
       return;
     }
     if (!form.selling_price || parseFloat(form.selling_price) <= 0) {
-      toast.error('Valid selling price is required');
+      toast.error("Valid selling price is required");
       return;
     }
 
     setSaving(true);
-    
+
     const payload = {
       name_en: form.name_en.trim(),
       name_np: form.name_np.trim(),
@@ -109,34 +117,34 @@ export default function ProductForm() {
       quantity: parseInt(form.quantity) || 0,
       quantity_type: form.quantity_type,
       low_stock_threshold: parseInt(form.low_stock_threshold) || 5,
-      supplier_id: form.supplier_id || null
+      supplier_id: form.supplier_id || null,
     };
 
     try {
       if (isEdit) {
         await axios.put(`${API}/products/${id}`, payload, getAuthHeader());
-        toast.success('Product updated! / सामान अपडेट भयो!');
+        toast.success("Product updated! / सामान अपडेट भयो!");
       } else {
         await axios.post(`${API}/products`, payload, getAuthHeader());
-        toast.success('Product added! / सामान थपियो!');
+        toast.success("Product added! / सामान थपियो!");
       }
-      navigate('/inventory');
+      navigate("/inventory");
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to save product');
+      toast.error(err.response?.data?.detail || "Failed to save product");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Delete this product? / यो सामान मेटाउने?')) return;
-    
+    if (!window.confirm("Delete this product? / यो सामान मेटाउने?")) return;
+
     try {
       await axios.delete(`${API}/products/${id}`, getAuthHeader());
-      toast.success('Product deleted');
-      navigate('/inventory');
+      toast.success("Product deleted");
+      navigate("/inventory");
     } catch (err) {
-      toast.error('Failed to delete');
+      toast.error("Failed to delete");
     }
   };
 
@@ -165,14 +173,14 @@ export default function ProductForm() {
             </button>
             <div>
               <h1 className="text-lg font-semibold">
-                {isEdit ? 'Edit Product' : 'Add Product'}
+                {isEdit ? "Edit Product" : "Add Product"}
               </h1>
               <p className="text-xs text-gray-500 font-nepali">
-                {isEdit ? 'सामान सम्पादन' : 'नयाँ सामान'}
+                {isEdit ? "सामान सम्पादन" : "नयाँ सामान"}
               </p>
             </div>
           </div>
-          
+
           {isEdit && (
             <button
               onClick={handleDelete}
@@ -193,25 +201,29 @@ export default function ProductForm() {
             <Package className="w-5 h-5 text-[#8B0000]" />
             Product Name / सामानको नाम
           </h3>
-          
+
           <div>
-            <label className="text-sm text-gray-500 mb-1 block">English Name *</label>
+            <label className="text-sm text-gray-500 mb-1 block">
+              English Name *
+            </label>
             <input
               type="text"
               value={form.name_en}
-              onChange={(e) => handleChange('name_en', e.target.value)}
+              onChange={(e) => handleChange("name_en", e.target.value)}
               placeholder="Steel Plate Large"
               className="w-full h-12 px-4 border border-gray-300 rounded-xl"
               data-testid="name-en-input"
             />
           </div>
-          
+
           <div>
-            <label className="text-sm text-gray-500 mb-1 block">नेपाली नाम</label>
+            <label className="text-sm text-gray-500 mb-1 block">
+              नेपाली नाम
+            </label>
             <input
               type="text"
               value={form.name_np}
-              onChange={(e) => handleChange('name_np', e.target.value)}
+              onChange={(e) => handleChange("name_np", e.target.value)}
               placeholder="स्टिल थाली ठूलो"
               className="w-full h-12 px-4 border border-gray-300 rounded-xl font-nepali"
               data-testid="name-np-input"
@@ -225,31 +237,39 @@ export default function ProductForm() {
             <MapPin className="w-5 h-5 text-[#8B0000]" />
             Category & Location / वर्ग र स्थान
           </h3>
-          
+
           <div>
-            <label className="text-sm text-gray-500 mb-1 block">Category / वर्ग</label>
+            <label className="text-sm text-gray-500 mb-1 block">
+              Category / वर्ग
+            </label>
             <select
               value={form.category}
-              onChange={(e) => handleChange('category', e.target.value)}
+              onChange={(e) => handleChange("category", e.target.value)}
               className="w-full h-12 px-4 border border-gray-300 rounded-xl bg-white"
               data-testid="category-select"
             >
               {Object.entries(CATEGORIES).map(([id, cat]) => (
-                <option key={id} value={id}>{cat.name_en} / {cat.name_np}</option>
+                <option key={id} value={id}>
+                  {cat.name_en} / {cat.name_np}
+                </option>
               ))}
             </select>
           </div>
-          
+
           <div>
-            <label className="text-sm text-gray-500 mb-1 block">Location / स्थान</label>
+            <label className="text-sm text-gray-500 mb-1 block">
+              Location / स्थान
+            </label>
             <select
               value={form.location}
-              onChange={(e) => handleChange('location', e.target.value)}
+              onChange={(e) => handleChange("location", e.target.value)}
               className="w-full h-12 px-4 border border-gray-300 rounded-xl bg-white"
               data-testid="location-select"
             >
               {Object.entries(LOCATIONS).map(([id, loc]) => (
-                <option key={id} value={id}>{loc.name_en} / {loc.name_np}</option>
+                <option key={id} value={id}>
+                  {loc.name_en} / {loc.name_np}
+                </option>
               ))}
             </select>
           </div>
@@ -261,35 +281,41 @@ export default function ProductForm() {
             <IndianRupee className="w-5 h-5 text-[#8B0000]" />
             Pricing / मूल्य
           </h3>
-          
+
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Cost Price / खरिद मूल्य</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Cost Price / खरिद मूल्य
+              </label>
               <input
                 type="number"
                 value={form.cost_price}
-                onChange={(e) => handleChange('cost_price', e.target.value)}
+                onChange={(e) => handleChange("cost_price", e.target.value)}
                 placeholder="0"
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl"
                 data-testid="cost-price-input"
               />
             </div>
-            
+
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Selling Price * / बिक्री मूल्य</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Selling Price * / बिक्री मूल्य
+              </label>
               <input
                 type="number"
                 value={form.selling_price}
-                onChange={(e) => handleChange('selling_price', e.target.value)}
+                onChange={(e) => handleChange("selling_price", e.target.value)}
                 placeholder="0"
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl"
                 data-testid="selling-price-input"
               />
             </div>
           </div>
-          
+
           {margin !== null && (
-            <div className={`text-sm p-2 rounded-lg ${parseFloat(margin) >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            <div
+              className={`text-sm p-2 rounded-lg ${parseFloat(margin) >= 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+            >
               Margin / नाफा: {margin}%
             </div>
           )}
@@ -301,43 +327,51 @@ export default function ProductForm() {
             <Hash className="w-5 h-5 text-[#8B0000]" />
             Stock / स्टक
           </h3>
-          
+
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Current Stock</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Current Stock
+              </label>
               <input
                 type="number"
                 value={form.quantity}
-                onChange={(e) => handleChange('quantity', e.target.value)}
+                onChange={(e) => handleChange("quantity", e.target.value)}
                 placeholder="0"
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl"
                 data-testid="quantity-input"
               />
             </div>
-            
+
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Low Stock Alert</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Low Stock Alert
+              </label>
               <input
                 type="number"
                 value={form.low_stock_threshold}
-                onChange={(e) => handleChange('low_stock_threshold', e.target.value)}
+                onChange={(e) =>
+                  handleChange("low_stock_threshold", e.target.value)
+                }
                 placeholder="5"
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl"
                 data-testid="threshold-input"
               />
             </div>
           </div>
-          
+
           <div>
-            <label className="text-sm text-gray-500 mb-2 block">Count Type / गणना प्रकार</label>
+            <label className="text-sm text-gray-500 mb-2 block">
+              Count Type / गणना प्रकार
+            </label>
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => handleChange('quantity_type', 'exact')}
+                onClick={() => handleChange("quantity_type", "exact")}
                 className={`flex-1 py-3 rounded-xl font-medium transition-colors ${
-                  form.quantity_type === 'exact'
-                    ? 'bg-[#8B0000] text-white'
-                    : 'bg-gray-100 text-gray-600'
+                  form.quantity_type === "exact"
+                    ? "bg-[#8B0000] text-white"
+                    : "bg-gray-100 text-gray-600"
                 }`}
                 data-testid="qty-type-exact"
               >
@@ -345,11 +379,11 @@ export default function ProductForm() {
               </button>
               <button
                 type="button"
-                onClick={() => handleChange('quantity_type', 'approximate')}
+                onClick={() => handleChange("quantity_type", "approximate")}
                 className={`flex-1 py-3 rounded-xl font-medium transition-colors ${
-                  form.quantity_type === 'approximate'
-                    ? 'bg-[#8B0000] text-white'
-                    : 'bg-gray-100 text-gray-600'
+                  form.quantity_type === "approximate"
+                    ? "bg-[#8B0000] text-white"
+                    : "bg-gray-100 text-gray-600"
                 }`}
                 data-testid="qty-type-approx"
               >
@@ -365,16 +399,18 @@ export default function ProductForm() {
             <Truck className="w-5 h-5 text-[#8B0000]" />
             Supplier / आपूर्तिकर्ता
           </h3>
-          
+
           <select
             value={form.supplier_id}
-            onChange={(e) => handleChange('supplier_id', e.target.value)}
+            onChange={(e) => handleChange("supplier_id", e.target.value)}
             className="w-full h-12 px-4 border border-gray-300 rounded-xl bg-white"
             data-testid="supplier-select"
           >
             <option value="">No Supplier / आपूर्तिकर्ता छैन</option>
             {suppliers.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
             ))}
           </select>
         </div>
@@ -394,7 +430,9 @@ export default function ProductForm() {
             ) : (
               <>
                 <Save className="w-5 h-5" />
-                {isEdit ? 'Update Product / अपडेट गर्नु' : 'Add Product / थप्नुहोस्'}
+                {isEdit
+                  ? "Update Product / अपडेट गर्नु"
+                  : "Add Product / थप्नुहोस्"}
               </>
             )}
           </button>

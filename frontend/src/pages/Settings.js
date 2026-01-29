@@ -1,25 +1,40 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  Settings as SettingsIcon, LogOut, Users, Plus, 
-  Trash2, Phone, MapPin, Edit2, Save, X, Key
-} from 'lucide-react';
-import Layout from '../components/Layout';
-import Modal from '../components/Modal';
-import { useAuth } from '../context/AuthContext';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import {
+  Settings as SettingsIcon,
+  LogOut,
+  Users,
+  Plus,
+  Trash2,
+  Phone,
+  MapPin,
+  Edit2,
+  Save,
+  X,
+  Key,
+} from "lucide-react";
+import Layout from "../components/Layout";
+import Modal from "../components/Modal";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "sonner";
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API_BASE = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, "") || "";
+const API = `${API_BASE}/api`;
 
 export default function Settings() {
   const navigate = useNavigate();
   const { logout, getAuthHeader, shopName, shopNameEn } = useAuth();
-  
+
   const [suppliers, setSuppliers] = useState([]);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
-  const [supplierForm, setSupplierForm] = useState({ name: '', phone: '', address: '', notes: '' });
+  const [supplierForm, setSupplierForm] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    notes: "",
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -32,7 +47,7 @@ export default function Settings() {
       const res = await axios.get(`${API}/suppliers`, getAuthHeader());
       setSuppliers(res.data);
     } catch (err) {
-      console.error('Failed to fetch suppliers:', err);
+      console.error("Failed to fetch suppliers:", err);
     } finally {
       setLoading(false);
     }
@@ -40,37 +55,41 @@ export default function Settings() {
 
   const handleSupplierSubmit = async () => {
     if (!supplierForm.name.trim()) {
-      toast.error('Supplier name is required');
+      toast.error("Supplier name is required");
       return;
     }
 
     setSaving(true);
     try {
       if (editingSupplier) {
-        await axios.put(`${API}/suppliers/${editingSupplier.id}`, supplierForm, getAuthHeader());
-        toast.success('Supplier updated!');
+        await axios.put(
+          `${API}/suppliers/${editingSupplier.id}`,
+          supplierForm,
+          getAuthHeader(),
+        );
+        toast.success("Supplier updated!");
       } else {
         await axios.post(`${API}/suppliers`, supplierForm, getAuthHeader());
-        toast.success('Supplier added!');
+        toast.success("Supplier added!");
       }
       fetchSuppliers();
       closeSupplierModal();
     } catch (err) {
-      toast.error('Failed to save supplier');
+      toast.error("Failed to save supplier");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteSupplier = async (supplierId) => {
-    if (!window.confirm('Delete this supplier?')) return;
-    
+    if (!window.confirm("Delete this supplier?")) return;
+
     try {
       await axios.delete(`${API}/suppliers/${supplierId}`, getAuthHeader());
-      toast.success('Supplier deleted');
+      toast.success("Supplier deleted");
       fetchSuppliers();
     } catch (err) {
-      toast.error('Failed to delete');
+      toast.error("Failed to delete");
     }
   };
 
@@ -79,13 +98,13 @@ export default function Settings() {
       setEditingSupplier(supplier);
       setSupplierForm({
         name: supplier.name,
-        phone: supplier.phone || '',
-        address: supplier.address || '',
-        notes: supplier.notes || ''
+        phone: supplier.phone || "",
+        address: supplier.address || "",
+        notes: supplier.notes || "",
       });
     } else {
       setEditingSupplier(null);
-      setSupplierForm({ name: '', phone: '', address: '', notes: '' });
+      setSupplierForm({ name: "", phone: "", address: "", notes: "" });
     }
     setShowSupplierModal(true);
   };
@@ -93,13 +112,13 @@ export default function Settings() {
   const closeSupplierModal = () => {
     setShowSupplierModal(false);
     setEditingSupplier(null);
-    setSupplierForm({ name: '', phone: '', address: '', notes: '' });
+    setSupplierForm({ name: "", phone: "", address: "", notes: "" });
   };
 
   const handleLogout = () => {
-    if (window.confirm('Logout from shop? / पसलबाट बाहिर निस्कने?')) {
+    if (window.confirm("Logout from shop? / पसलबाट बाहिर निस्कने?")) {
       logout();
-      navigate('/login');
+      navigate("/login");
     }
   };
 
@@ -119,7 +138,9 @@ export default function Settings() {
               <SettingsIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="font-semibold text-[#2D2D2D] font-nepali">{shopName}</h2>
+              <h2 className="font-semibold text-[#2D2D2D] font-nepali">
+                {shopName}
+              </h2>
               <p className="text-sm text-gray-500">{shopNameEn}</p>
             </div>
           </div>
@@ -149,8 +170,8 @@ export default function Settings() {
           ) : suppliers.length > 0 ? (
             <div className="space-y-2">
               {suppliers.map((supplier) => (
-                <div 
-                  key={supplier.id} 
+                <div
+                  key={supplier.id}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
                   data-testid={`supplier-${supplier.id}`}
                 >
@@ -180,7 +201,9 @@ export default function Settings() {
               ))}
             </div>
           ) : (
-            <p className="text-center text-gray-500 py-4">No suppliers added yet</p>
+            <p className="text-center text-gray-500 py-4">
+              No suppliers added yet
+            </p>
           )}
         </div>
 
@@ -207,51 +230,76 @@ export default function Settings() {
         <Modal
           isOpen={showSupplierModal}
           onClose={closeSupplierModal}
-          title={editingSupplier ? 'Edit Supplier' : 'Add Supplier'}
-          titleNp={editingSupplier ? 'सम्पादन गर्नु' : 'आपूर्तिकर्ता थप्नु'}
+          title={editingSupplier ? "Edit Supplier" : "Add Supplier"}
+          titleNp={editingSupplier ? "सम्पादन गर्नु" : "आपूर्तिकर्ता थप्नु"}
         >
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Name / नाम *</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Name / नाम *
+              </label>
               <input
                 type="text"
                 value={supplierForm.name}
-                onChange={(e) => setSupplierForm(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setSupplierForm((prev) => ({ ...prev, name: e.target.value }))
+                }
                 placeholder="Supplier Name"
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl"
                 data-testid="supplier-name-input"
               />
             </div>
-            
+
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Phone / फोन</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Phone / फोन
+              </label>
               <input
                 type="tel"
                 value={supplierForm.phone}
-                onChange={(e) => setSupplierForm(prev => ({ ...prev, phone: e.target.value }))}
+                onChange={(e) =>
+                  setSupplierForm((prev) => ({
+                    ...prev,
+                    phone: e.target.value,
+                  }))
+                }
                 placeholder="9800000000"
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl"
                 data-testid="supplier-phone-input"
               />
             </div>
-            
+
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Address / ठेगाना</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Address / ठेगाना
+              </label>
               <input
                 type="text"
                 value={supplierForm.address}
-                onChange={(e) => setSupplierForm(prev => ({ ...prev, address: e.target.value }))}
+                onChange={(e) =>
+                  setSupplierForm((prev) => ({
+                    ...prev,
+                    address: e.target.value,
+                  }))
+                }
                 placeholder="Kalimati, Kathmandu"
                 className="w-full h-12 px-4 border border-gray-300 rounded-xl"
                 data-testid="supplier-address-input"
               />
             </div>
-            
+
             <div>
-              <label className="text-sm text-gray-500 mb-1 block">Notes / टिप्पणी</label>
+              <label className="text-sm text-gray-500 mb-1 block">
+                Notes / टिप्पणी
+              </label>
               <textarea
                 value={supplierForm.notes}
-                onChange={(e) => setSupplierForm(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) =>
+                  setSupplierForm((prev) => ({
+                    ...prev,
+                    notes: e.target.value,
+                  }))
+                }
                 placeholder="Any notes..."
                 className="w-full h-24 px-4 py-3 border border-gray-300 rounded-xl resize-none"
                 data-testid="supplier-notes-input"
@@ -270,7 +318,7 @@ export default function Settings() {
               ) : (
                 <>
                   <Save className="w-5 h-5" />
-                  {editingSupplier ? 'Update' : 'Add Supplier'}
+                  {editingSupplier ? "Update" : "Add Supplier"}
                 </>
               )}
             </button>
