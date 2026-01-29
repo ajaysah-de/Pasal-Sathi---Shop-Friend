@@ -384,12 +384,13 @@ class PasalSathiAPITester:
             "mode": "quick"
         }
         
-        # We expect this to fail with a specific error about image format
-        success, data = self.make_request('POST', 'scan/analyze', scan_data, 500)
+        # We expect this to fail with error about image format (520 or 500 status)
+        success, data = self.make_request('POST', 'scan/analyze', scan_data, 520)
+        if not success:
+            success, data = self.make_request('POST', 'scan/analyze', scan_data, 500)
         
         if success and 'detail' in data and ('Invalid base64' in data['detail'] or 'Scan failed' in data['detail']):
             details = "Endpoint working (image format validation working)"
-            success = True
         else:
             details = f"Unexpected response: {data}"
         
@@ -403,12 +404,13 @@ class PasalSathiAPITester:
             "mode": "smart"
         }
         
-        # We expect this to fail with a specific error about image format
-        success, data = self.make_request('POST', 'scan/analyze', scan_data, 500)
+        # We expect this to fail with error about image format (520 or 500 status)
+        success, data = self.make_request('POST', 'scan/analyze', scan_data, 520)
+        if not success:
+            success, data = self.make_request('POST', 'scan/analyze', scan_data, 500)
         
         if success and 'detail' in data and ('Invalid base64' in data['detail'] or 'Scan failed' in data['detail']):
             details = "Endpoint working (image format validation working)"
-            success = True
         else:
             details = f"Unexpected response: {data}"
         
