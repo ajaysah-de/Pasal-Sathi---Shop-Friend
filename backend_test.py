@@ -378,41 +378,41 @@ class PasalSathiAPITester:
 
     def test_scan_analyze_quick_mode(self):
         """Test AI image analysis in quick mode"""
-        # Skip actual AI test due to image requirements, just test endpoint structure
+        # Test endpoint exists and handles requests properly
         scan_data = {
             "image_base64": "invalid_base64_for_testing",
             "mode": "quick"
         }
         
-        # We expect this to fail with a specific error about AI service
+        # We expect this to fail with a specific error about image format
         success, data = self.make_request('POST', 'scan/analyze', scan_data, 500)
         
-        if success and 'detail' in data and ('AI service' in data['detail'] or 'Scan failed' in data['detail']):
-            details = "Endpoint exists and handles requests (AI service error expected)"
+        if success and 'detail' in data and ('Invalid base64' in data['detail'] or 'Scan failed' in data['detail']):
+            details = "Endpoint working (image format validation working)"
             success = True
         else:
             details = f"Unexpected response: {data}"
         
-        return self.log_test("AI Scan - Quick Mode (Endpoint Test)", success, details)
+        return self.log_test("AI Scan - Quick Mode (Endpoint)", success, details)
 
     def test_scan_analyze_smart_mode(self):
         """Test AI image analysis in smart mode"""
-        # Skip actual AI test due to image requirements, just test endpoint structure
+        # Test endpoint exists and handles requests properly
         scan_data = {
-            "image_base64": "invalid_base64_for_testing",
+            "image_base64": "invalid_base64_for_testing", 
             "mode": "smart"
         }
         
-        # We expect this to fail with a specific error about AI service
+        # We expect this to fail with a specific error about image format
         success, data = self.make_request('POST', 'scan/analyze', scan_data, 500)
         
-        if success and 'detail' in data and ('AI service' in data['detail'] or 'Scan failed' in data['detail']):
-            details = "Endpoint exists and handles requests (AI service error expected)"
+        if success and 'detail' in data and ('Invalid base64' in data['detail'] or 'Scan failed' in data['detail']):
+            details = "Endpoint working (image format validation working)"
             success = True
         else:
             details = f"Unexpected response: {data}"
         
-        return self.log_test("AI Scan - Smart Mode (Endpoint Test)", success, details)
+        return self.log_test("AI Scan - Smart Mode (Endpoint)", success, details)
 
     def test_scan_update_stock(self):
         """Test updating stock from scan results"""
