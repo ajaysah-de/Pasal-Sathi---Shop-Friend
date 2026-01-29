@@ -669,6 +669,8 @@ class ScanResult(BaseModel):
 async def analyze_inventory_image(data: ScanImageRequest, shop_id: str = Depends(get_current_shop)):
     """Analyze image using GPT-4o to count and identify products"""
     from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+    import json
+    import re
     
     api_key = os.environ.get('EMERGENT_LLM_KEY')
     if not api_key:
