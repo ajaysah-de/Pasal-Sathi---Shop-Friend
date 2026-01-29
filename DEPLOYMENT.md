@@ -38,7 +38,7 @@
    ```
    MONGO_URL = mongodb+srv://pasalsathi_user:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/pasalsathi
    CORS_ORIGINS = https://your-app.vercel.app
-   EMERGENT_LLM_KEY = sk-emergent-xxxxx
+   OPENAI_API_KEY = sk-xxxxx (get from platform.openai.com)
    ```
 7. Click **"Apply"** → Wait for deployment
 8. Copy your backend URL: `https://pasal-sathi-api.onrender.com`
