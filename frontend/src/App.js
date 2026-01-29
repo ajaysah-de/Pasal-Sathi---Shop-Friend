@@ -11,6 +11,7 @@ import ProductForm from './pages/ProductForm';
 import Sale from './pages/Sale';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import Scanner from './pages/Scanner';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
