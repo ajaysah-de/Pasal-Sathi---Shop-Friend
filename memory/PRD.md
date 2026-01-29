@@ -133,27 +133,27 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | /api/auth/check | Check if shop is setup |
-| POST | /api/auth/setup | Initial shop setup |
-| POST | /api/auth/login | Login with PIN |
-| GET | /api/categories | Get all categories |
-| GET | /api/locations | Get all locations |
-| GET | /api/products | List products (with filters) |
-| POST | /api/products | Create product |
-| PUT | /api/products/{id} | Update product |
-| DELETE | /api/products/{id} | Soft delete product |
-| GET | /api/sales | List sales (date range) |
-| GET | /api/sales/today | Today's sales summary |
-| POST | /api/sales | Create sale |
-| GET | /api/suppliers | List suppliers |
-| POST | /api/suppliers | Create supplier |
-| PUT | /api/suppliers/{id} | Update supplier |
-| DELETE | /api/suppliers/{id} | Soft delete supplier |
-| GET | /api/alerts/low-stock | Get low stock products |
-| GET | /api/dashboard/stats | Dashboard statistics |
-| GET | /api/reports/sales/excel | Export sales to Excel |
-| GET | /api/reports/sales/pdf | Export sales to PDF |
-| GET | /api/reports/inventory/excel | Export inventory to Excel |
+| **AI Scanner (NEW)** |
+| POST | `/api/scan/analyze` | Analyze image with GPT-4o |
+| POST | `/api/scan/update-stock` | Update stock from scan |
+| GET | `/api/scans` | Get scan history |
+| **Authentication** |
+| GET | `/api/auth/check` | Check if shop is setup |
+| POST | `/api/auth/setup` | Initial shop setup |
+| POST | `/api/auth/login` | Login with PIN |
+| **Products** |
+| GET | `/api/products` | List products |
+| POST | `/api/products` | Create product |
+| PUT | `/api/products/{id}` | Update product |
+| DELETE | `/api/products/{id}` | Delete product |
+| **Sales** |
+| GET | `/api/sales` | List sales |
+| GET | `/api/sales/today` | Today's summary |
+| POST | `/api/sales` | Create sale |
+| **Reports** |
+| GET | `/api/reports/sales/excel` | Export sales Excel |
+| GET | `/api/reports/sales/pdf` | Export sales PDF |
+| GET | `/api/reports/inventory/excel` | Export inventory |
 
 ---
 
