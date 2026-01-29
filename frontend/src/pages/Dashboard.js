@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   TrendingUp, Package, AlertTriangle, ShoppingCart, 
-  Plus, ArrowRight, IndianRupee, Clock
+  Plus, ArrowRight, IndianRupee, Clock, ScanLine, Camera
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
