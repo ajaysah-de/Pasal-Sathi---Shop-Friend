@@ -28,6 +28,8 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 - **Database**: MongoDB (Motor async driver)
 - **Authentication**: PIN-based with JWT tokens
 - **Export**: OpenPyXL (Excel) + ReportLab (PDF)
+- **AI Vision**: OpenAI GPT-4o via Emergent LLM Key
+- **PWA**: Service Worker + Manifest for installable app
 
 ### Database Collections
 1. `shop_config` - Shop settings and PIN hash
