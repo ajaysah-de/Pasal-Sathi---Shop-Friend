@@ -511,8 +511,15 @@ export default function Scanner() {
                   <RefreshCw className="w-4 h-4" />
                   Update Stock / स्टक अपडेट गर्नुहोस्
                 </h4>
+                <p className="text-xs text-gray-500 mb-2">
+                  Edit the "New Stock" value to set the correct quantity
+                </p>
                 <div className="space-y-2">
-                  {scanResult.matched_products.map((match) => (
+                  {scanResult.matched_products.map((match) => {
+                    const currentNewQty = selectedUpdates[match.product_id]?.new_quantity ?? match.detected_count;
+                    const willChange = currentNewQty !== match.current_stock;
+                    
+                    return (
                     <div 
                       key={match.product_id}
                       className={`p-3 rounded-xl border-2 transition-colors ${
@@ -530,28 +537,38 @@ export default function Scanner() {
                         />
                         <div className="flex-1">
                           <p className="font-medium">{match.product_name}</p>
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-gray-500">Current: {match.current_stock}</span>
-                            <ChevronRight className="w-4 h-4 text-gray-400" />
-                            <span className={match.difference > 0 ? 'text-green-600' : match.difference < 0 ? 'text-red-600' : 'text-gray-600'}>
-                              Scanned: {match.detected_count}
+                          <div className="flex items-center gap-2 text-sm mt-1">
+                            <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-600">
+                              Current: {match.current_stock}
                             </span>
-                            {match.difference !== 0 && (
-                              <span className={`font-medium ${match.difference > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                ({match.difference > 0 ? '+' : ''}{match.difference})
+                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                            {willChange ? (
+                              <span className={`px-2 py-0.5 rounded font-medium ${
+                                currentNewQty > match.current_stock 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : 'bg-red-100 text-red-700'
+                              }`}>
+                                New: {currentNewQty} ({currentNewQty > match.current_stock ? '+' : ''}{currentNewQty - match.current_stock})
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-500">
+                                No change
                               </span>
                             )}
                           </div>
                         </div>
-                        <input
-                          type="number"
-                          value={selectedUpdates[match.product_id]?.new_quantity ?? match.detected_count}
-                          onChange={(e) => updateQuantity(match.product_id, e.target.value)}
-                          className="w-20 h-10 text-center border border-gray-300 rounded-lg"
-                        />
+                        <div className="flex flex-col items-center">
+                          <span className="text-xs text-gray-400 mb-1">New Stock</span>
+                          <input
+                            type="number"
+                            value={currentNewQty}
+                            onChange={(e) => updateQuantity(match.product_id, e.target.value)}
+                            className="w-20 h-10 text-center border-2 border-[#8B0000] rounded-lg font-bold text-[#8B0000]"
+                          />
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
             )}
