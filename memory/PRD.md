@@ -171,27 +171,3 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 3. Multi-user support with different PINs
 4. Barcode scanner integration
 5. WhatsApp share for receipts
-
----
-
-## Design System
-
-### Colors
-- Primary: #8B0000 (Simrik Red)
-- Secondary: #D4AF37 (Brass Gold)
-- Background: #F9F9F5 (Warm Rice Paper)
-- Success: #15803D
-- Warning: #B45309
-- Error: #DC2626
-
-### Typography
-- Headings: Manrope
-- Body: Inter
-- Nepali: Noto Sans Devanagari
-
-### Key UI Patterns
-- Large touch targets (48x48px minimum)
-- Bottom navigation for mobile
-- Visual category icons
-- Bilingual labels throughout
-- Numpad for quantity entry
