@@ -374,6 +374,80 @@ class PasalSathiAPITester:
         
         return self.log_test("Low Stock Alerts", success, details)
 
+    # ============ AI SCANNER TESTS ============
+
+    def test_scan_analyze_quick_mode(self):
+        """Test AI image analysis in quick mode"""
+        # Create a simple base64 test image (1x1 pixel JPEG)
+        test_image_b64 = "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/wA=="
+        
+        scan_data = {
+            "image_base64": test_image_b64,
+            "mode": "quick"
+        }
+        
+        success, data = self.make_request('POST', 'scan/analyze', scan_data, 200)
+        
+        if success and 'detected_items' in data:
+            details = f"Quick scan completed, found {data.get('total_items_counted', 0)} items"
+        else:
+            details = f"Quick scan failed: {data}"
+        
+        return self.log_test("AI Scan - Quick Mode", success, details)
+
+    def test_scan_analyze_smart_mode(self):
+        """Test AI image analysis in smart mode"""
+        # Create a simple base64 test image (1x1 pixel JPEG)
+        test_image_b64 = "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/wA=="
+        
+        scan_data = {
+            "image_base64": test_image_b64,
+            "mode": "smart"
+        }
+        
+        success, data = self.make_request('POST', 'scan/analyze', scan_data, 200)
+        
+        if success and 'detected_items' in data:
+            details = f"Smart scan completed, found {data.get('total_items_counted', 0)} items, {len(data.get('matched_products', []))} matches"
+        else:
+            details = f"Smart scan failed: {data}"
+        
+        return self.log_test("AI Scan - Smart Mode", success, details)
+
+    def test_scan_update_stock(self):
+        """Test updating stock from scan results"""
+        if not self.created_items['products']:
+            return self.log_test("Scan Update Stock", False, "No products available for stock update")
+        
+        # Test stock update with existing product
+        product_id = self.created_items['products'][0]
+        update_data = [
+            {
+                "product_id": product_id,
+                "new_quantity": 75
+            }
+        ]
+        
+        success, data = self.make_request('POST', 'scan/update-stock', update_data, 200)
+        
+        if success and 'updated_ids' in data:
+            details = f"Updated {len(data.get('updated_ids', []))} products from scan"
+        else:
+            details = f"Stock update failed: {data}"
+        
+        return self.log_test("Scan Update Stock", success, details)
+
+    def test_get_scan_history(self):
+        """Test getting scan history"""
+        success, data = self.make_request('GET', 'scans?limit=5')
+        
+        if success and isinstance(data, list):
+            details = f"Found {len(data)} scan records"
+        else:
+            details = f"Scan history response: {data}"
+        
+        return self.log_test("Get Scan History", success, details)
+
     # ============ REPORTS TESTS ============
 
     def test_sales_report_excel(self):
