@@ -90,7 +90,7 @@ After Vercel deployment, go back to Render:
 | MONGO_URL | `mongodb+srv://...` |
 | DB_NAME | `pasalsathi` |
 | CORS_ORIGINS | `https://your-app.vercel.app` |
-| EMERGENT_LLM_KEY | `sk-emergent-xxxxx` |
+| OPENAI_API_KEY | `sk-...` (from platform.openai.com) |
 
 ### Frontend (Vercel)
 | Variable | Value |
