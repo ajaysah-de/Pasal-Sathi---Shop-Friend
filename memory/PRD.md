@@ -92,6 +92,7 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 - Inventory value calculation
 - Low stock alerts count
 - Recent sales list
+- **AI Scanner quick access card**
 
 ### Inventory Management
 - 7 product categories with Nepali labels
