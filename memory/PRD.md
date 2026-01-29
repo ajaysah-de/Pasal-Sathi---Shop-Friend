@@ -9,6 +9,7 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 2. **Low Stock Alerts**: Simple rule-based (threshold-based, no AI)
 3. **Authentication**: Simple PIN-based login (4-6 digits)
 4. **Reports**: PDF and Excel export functionality
+5. **AI Scanner**: OpenAI GPT-4o for photo-based inventory counting (both Quick and Smart modes)
 
 ### Target User Persona
 - Traditional Nepali shop owners aged 40-55
