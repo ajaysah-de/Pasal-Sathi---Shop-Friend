@@ -43,7 +43,7 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 
 ## Core Requirements (Static)
 
-### P0 - Critical (MVP)
+### P0 - Critical (MVP) ✅
 - [x] PIN-based authentication
 - [x] Product management (CRUD)
 - [x] Visual category-based inventory (Steel/Brass/Plastic/Electric/Religious/Cleaning/Boxed)
@@ -52,12 +52,14 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 - [x] Low stock alerts (threshold-based)
 - [x] Bilingual UI (English + Nepali)
 
-### P1 - Important
+### P1 - Important ✅
 - [x] Supplier management
 - [x] Sales history with date filtering
 - [x] PDF/Excel report export
 - [x] Dashboard with today/week stats
 - [x] Discount support in sales
+- [x] PWA support (installable on phones)
+- [x] **AI Stock Scanner** - Photo-based inventory counting
 
 ### P2 - Nice to Have
 - [ ] Purchase tracking per supplier
