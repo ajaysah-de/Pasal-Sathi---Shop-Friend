@@ -734,9 +734,6 @@ Respond ONLY in this JSON format:
         response = await chat.send_message(user_message)
         
         # Parse the response
-        import json
-        import re
-        
         # Extract JSON from response
         json_match = re.search(r'\{[\s\S]*\}', response)
         if not json_match:
