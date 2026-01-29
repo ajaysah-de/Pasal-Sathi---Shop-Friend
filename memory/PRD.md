@@ -161,7 +161,7 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 
 ### Immediate (P1)
 1. Add purchase recording linked to suppliers
-2. Customer credit tracking (udhaaro ledger)
+2. Customer credit tracking (उधारो ledger)
 3. Product image upload support
 4. Print receipt feature
 
@@ -169,9 +169,8 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 1. Festival season stock alerts (Dashain, Tihar)
 2. Price history tracking
 3. Multi-user support with different PINs
-4. Offline mode with data sync
-5. Barcode scanner integration
-6. WhatsApp share for receipts
+4. Barcode scanner integration
+5. WhatsApp share for receipts
 
 ---
 
