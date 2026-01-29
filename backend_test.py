@@ -537,6 +537,13 @@ class PasalSathiAPITester:
         self.test_dashboard_stats()
         self.test_low_stock_alerts()
         
+        # AI Scanner Tests
+        print("\n🤖 AI SCANNER TESTS")
+        self.test_scan_analyze_quick_mode()
+        self.test_scan_analyze_smart_mode()
+        self.test_scan_update_stock()
+        self.test_get_scan_history()
+        
         # Reports Tests
         print("\n📄 REPORTS TESTS")
         self.test_sales_report_excel()
