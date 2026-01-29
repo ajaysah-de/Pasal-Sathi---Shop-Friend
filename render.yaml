@@ -1,0 +1,24 @@
+# Render Blueprint for Pasal Sathi Backend
+# Deploy: Connect GitHub repo → Render auto-detects this file
+
+services:
+  - type: web
+    name: pasal-sathi-api
+    runtime: python
+    region: singapore  # Closest to Nepal
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/
+    envVars:
+      - key: MONGO_URL
+        sync: false  # You'll set this manually in Render dashboard
+      - key: DB_NAME
+        value: pasalsathi
+      - key: CORS_ORIGINS
+        sync: false  # Set to your Vercel frontend URL
+      - key: EMERGENT_LLM_KEY
+        sync: false  # Your Emergent LLM key for AI scanning
+      - key: PYTHON_VERSION
+        value: "3.11"
