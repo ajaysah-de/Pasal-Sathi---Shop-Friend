@@ -112,7 +112,8 @@ After Vercel deployment, go back to Render:
 - Check browser console for errors
 
 ### AI Scanner not working?
-- Verify EMERGENT_LLM_KEY is set in Render
+- Verify OPENAI_API_KEY is set in Render
+- Get key from https://platform.openai.com/api-keys
 - Check Render logs for API errors
 
 ---
