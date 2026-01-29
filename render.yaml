@@ -18,7 +18,7 @@ services:
         value: pasalsathi
       - key: CORS_ORIGINS
         sync: false  # Set to your Vercel frontend URL
-      - key: EMERGENT_LLM_KEY
-        sync: false  # Your Emergent LLM key for AI scanning
+      - key: OPENAI_API_KEY
+        sync: false  # Your OpenAI API key for AI scanning
       - key: PYTHON_VERSION
         value: "3.11.9"
