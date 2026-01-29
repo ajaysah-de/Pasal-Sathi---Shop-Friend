@@ -4,7 +4,7 @@ import axios from 'axios';
 import { 
   Camera, X, Zap, Brain, RefreshCw, Check, 
   AlertTriangle, Package, ArrowLeft, Image as ImageIcon,
-  ScanLine, ChevronRight
+  ScanLine, ChevronRight, Plus, Edit3
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
@@ -27,6 +27,9 @@ export default function Scanner() {
   const [scanResult, setScanResult] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const [selectedUpdates, setSelectedUpdates] = useState({});
+  const [newProducts, setNewProducts] = useState({}); // Items to add as new products
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [editingNewProduct, setEditingNewProduct] = useState(null);
 
   // Start camera stream
   const startCamera = async () => {
@@ -110,7 +113,7 @@ export default function Scanner() {
       setScanResult(res.data);
       setShowResults(true);
       
-      // Initialize selected updates
+      // Initialize selected updates for matched products
       const updates = {};
       res.data.matched_products.forEach(match => {
         updates[match.product_id] = {
@@ -119,6 +122,25 @@ export default function Scanner() {
         };
       });
       setSelectedUpdates(updates);
+      
+      // Initialize new products (items not matched)
+      const matchedNames = new Set(res.data.matched_products.map(m => m.detected_name.toLowerCase()));
+      const newProds = {};
+      res.data.detected_items.forEach((item, idx) => {
+        if (!matchedNames.has(item.name.toLowerCase())) {
+          newProds[`new_${idx}`] = {
+            selected: false,
+            name_en: item.name,
+            name_np: item.name_np || '',
+            category: item.category || 'other',
+            location: item.location_hint || 'shelf_top',
+            quantity: item.count,
+            selling_price: '',
+            cost_price: ''
+          };
+        }
+      });
+      setNewProducts(newProds);
       
       toast.success(`Found ${res.data.total_items_counted} items!`);
     } catch (err) {
@@ -154,12 +176,59 @@ export default function Scanner() {
     }
   };
 
+  // Add new product from scan
+  const addNewProduct = async (key) => {
+    const product = newProducts[key];
+    if (!product.selling_price) {
+      toast.error('Please enter selling price / बिक्री मूल्य हाल्नुहोस्');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/products`, {
+        name_en: product.name_en,
+        name_np: product.name_np,
+        category: product.category,
+        location: product.location,
+        quantity: product.quantity,
+        selling_price: parseFloat(product.selling_price),
+        cost_price: parseFloat(product.cost_price) || 0,
+        low_stock_threshold: 5
+      }, getAuthHeader());
+      
+      toast.success(`Added: ${product.name_en}`);
+      
+      // Remove from new products list
+      setNewProducts(prev => {
+        const updated = { ...prev };
+        delete updated[key];
+        return updated;
+      });
+      setShowAddProduct(false);
+      setEditingNewProduct(null);
+    } catch (err) {
+      toast.error('Failed to add product');
+    }
+  };
+
+  // Update new product field
+  const updateNewProduct = (key, field, value) => {
+    setNewProducts(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [field]: value
+      }
+    }));
+  };
+
   // Reset scanner
   const resetScanner = () => {
     setCapturedImage(null);
     setScanResult(null);
     setShowResults(false);
     setSelectedUpdates({});
+    setNewProducts({});
   };
 
   const toggleUpdate = (productId) => {
@@ -181,6 +250,8 @@ export default function Scanner() {
       }
     }));
   };
+
+  const unmatchedItems = Object.entries(newProducts);
 
   return (
     <div className="min-h-screen bg-[#F9F9F5]" data-testid="scanner-page">
@@ -485,6 +556,57 @@ export default function Scanner() {
               </div>
             )}
 
+            {/* NEW: Unmatched Items - Add as New Products */}
+            {unmatchedItems.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2 flex items-center gap-2 text-blue-700">
+                  <Plus className="w-4 h-4" />
+                  New Items Found / नयाँ सामान भेटियो ({unmatchedItems.length})
+                </h4>
+                <p className="text-sm text-gray-500 mb-2">
+                  These items are not in your inventory. Add them as new products:
+                </p>
+                <div className="space-y-2">
+                  {unmatchedItems.map(([key, product]) => (
+                    <div 
+                      key={key}
+                      className="p-3 rounded-xl border-2 border-blue-200 bg-blue-50"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{product.name_en}</p>
+                          {product.name_np && <p className="text-sm text-gray-500 font-nepali">{product.name_np}</p>}
+                          <div className="flex items-center gap-2 mt-1">
+                            <span 
+                              className="text-xs px-2 py-0.5 rounded"
+                              style={{ 
+                                backgroundColor: `${CATEGORIES[product.category]?.color}20`, 
+                                color: CATEGORIES[product.category]?.color 
+                              }}
+                            >
+                              {CATEGORIES[product.category]?.name_np || product.category}
+                            </span>
+                            <span className="text-xs text-gray-500">Qty: {product.quantity}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setEditingNewProduct(key);
+                            setShowAddProduct(true);
+                          }}
+                          className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium flex items-center gap-1"
+                          data-testid={`add-new-${key}`}
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4 border-t">
               <button
@@ -504,6 +626,110 @@ export default function Scanner() {
                 </button>
               )}
             </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Add New Product Modal */}
+      <Modal
+        isOpen={showAddProduct && editingNewProduct}
+        onClose={() => {
+          setShowAddProduct(false);
+          setEditingNewProduct(null);
+        }}
+        title="Add New Product"
+        titleNp="नयाँ सामान थप्नुहोस्"
+      >
+        {editingNewProduct && newProducts[editingNewProduct] && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-gray-500 mb-1 block">Product Name (English)</label>
+              <input
+                type="text"
+                value={newProducts[editingNewProduct].name_en}
+                onChange={(e) => updateNewProduct(editingNewProduct, 'name_en', e.target.value)}
+                className="w-full h-12 px-4 border border-gray-300 rounded-xl"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-500 mb-1 block">नाम (नेपाली)</label>
+              <input
+                type="text"
+                value={newProducts[editingNewProduct].name_np}
+                onChange={(e) => updateNewProduct(editingNewProduct, 'name_np', e.target.value)}
+                className="w-full h-12 px-4 border border-gray-300 rounded-xl font-nepali"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-500 mb-1 block">Category / वर्ग</label>
+              <select
+                value={newProducts[editingNewProduct].category}
+                onChange={(e) => updateNewProduct(editingNewProduct, 'category', e.target.value)}
+                className="w-full h-12 px-4 border border-gray-300 rounded-xl bg-white"
+              >
+                {Object.entries(CATEGORIES).map(([id, cat]) => (
+                  <option key={id} value={id}>{cat.name_en} / {cat.name_np}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-500 mb-1 block">Location / स्थान</label>
+              <select
+                value={newProducts[editingNewProduct].location}
+                onChange={(e) => updateNewProduct(editingNewProduct, 'location', e.target.value)}
+                className="w-full h-12 px-4 border border-gray-300 rounded-xl bg-white"
+              >
+                {Object.entries(LOCATIONS).map(([id, loc]) => (
+                  <option key={id} value={id}>{loc.name_en} / {loc.name_np}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">Quantity / संख्या</label>
+                <input
+                  type="number"
+                  value={newProducts[editingNewProduct].quantity}
+                  onChange={(e) => updateNewProduct(editingNewProduct, 'quantity', parseInt(e.target.value) || 0)}
+                  className="w-full h-12 px-4 border border-gray-300 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">Cost Price / खरिद मूल्य</label>
+                <input
+                  type="number"
+                  value={newProducts[editingNewProduct].cost_price}
+                  onChange={(e) => updateNewProduct(editingNewProduct, 'cost_price', e.target.value)}
+                  placeholder="0"
+                  className="w-full h-12 px-4 border border-gray-300 rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-500 mb-1 block">Selling Price * / बिक्री मूल्य</label>
+              <input
+                type="number"
+                value={newProducts[editingNewProduct].selling_price}
+                onChange={(e) => updateNewProduct(editingNewProduct, 'selling_price', e.target.value)}
+                placeholder="Enter price..."
+                className="w-full h-12 px-4 border border-gray-300 rounded-xl"
+                data-testid="new-product-price"
+              />
+            </div>
+
+            <button
+              onClick={() => addNewProduct(editingNewProduct)}
+              className="w-full h-12 bg-[#8B0000] text-white font-semibold rounded-xl flex items-center justify-center gap-2"
+              data-testid="save-new-product-btn"
+            >
+              <Plus className="w-5 h-5" />
+              Add Product / सामान थप्नुहोस्
+            </button>
           </div>
         )}
       </Modal>
