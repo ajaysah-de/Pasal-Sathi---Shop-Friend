@@ -642,11 +642,182 @@ async def export_sales_pdf(date_from: str, date_to: str, shop_id: str = Depends(
         headers={"Content-Disposition": f"attachment; filename=sales_report_{date_from[:10]}_{date_to[:10]}.pdf"}
     )
 
+# ============ AI INVENTORY SCANNING ============
+
+class ScanImageRequest(BaseModel):
+    image_base64: str
+    mode: str = "smart"  # "quick" or "smart"
+
+class DetectedItem(BaseModel):
+    name: str
+    name_np: Optional[str] = None
+    category: str
+    count: int
+    confidence: str  # "high", "medium", "low"
+    location_hint: Optional[str] = None
+
+class ScanResult(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    mode: str
+    detected_items: List[DetectedItem]
+    total_items_counted: int
+    scan_notes: str
+    matched_products: List[dict] = []
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+@api_router.post("/scan/analyze", response_model=ScanResult)
+async def analyze_inventory_image(data: ScanImageRequest, shop_id: str = Depends(get_current_shop)):
+    """Analyze image using GPT-4o to count and identify products"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+    
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not api_key:
+        raise HTTPException(status_code=500, detail="AI service not configured")
+    
+    # Get existing products for matching
+    existing_products = await db.products.find({"is_active": True}, {"_id": 0}).to_list(500)
+    product_list = [{"name": p["name_en"], "name_np": p.get("name_np", ""), "category": p["category"]} for p in existing_products]
+    
+    # Build prompt based on mode
+    if data.mode == "quick":
+        system_prompt = """You are an inventory counting assistant for a Nepali utensil shop.
+Your task is to COUNT items visible in the image. Focus on accuracy of counts.
+
+Categories: steel (utensils), brass (religious items like diya, kalash), plastic, electric, cleaning, boxed, other
+
+Respond ONLY in this JSON format:
+{
+    "items": [
+        {"name": "Steel Plate Large", "name_np": "स्टिल थाली ठूलो", "category": "steel", "count": 15, "confidence": "high"},
+        {"name": "Brass Diya", "name_np": "पीतल दियो", "category": "brass", "count": 8, "confidence": "medium"}
+    ],
+    "total_counted": 23,
+    "notes": "Counted items on front shelf. Some items partially hidden."
+}"""
+        user_prompt = "Count all visible products in this shop image. Be accurate with counts."
+    else:
+        # Smart mode - also try to match with existing inventory
+        system_prompt = f"""You are an inventory counting assistant for a Nepali utensil shop.
+Your task is to IDENTIFY and COUNT items visible in the image, and match them to existing inventory.
+
+Existing products in shop inventory:
+{product_list[:50]}
+
+Categories: steel (utensils), brass (religious items like diya, kalash), plastic, electric, cleaning, boxed, other
+
+Location hints: hanging, shelf_top, shelf_bottom, front_display, storage, counter
+
+Respond ONLY in this JSON format:
+{{
+    "items": [
+        {{"name": "Steel Plate Large", "name_np": "स्टिल थाली ठूलो", "category": "steel", "count": 15, "confidence": "high", "location_hint": "shelf_top", "matches_existing": "Steel Plate Large"}},
+        {{"name": "Brass Diya Small", "name_np": "सानो पीतल दियो", "category": "brass", "count": 8, "confidence": "medium", "location_hint": "front_display", "matches_existing": null}}
+    ],
+    "total_counted": 23,
+    "notes": "Identified items on front display. Pressure cooker boxes visible on top shelf."
+}}"""
+        user_prompt = "Identify and count all visible products. Match them to existing inventory if possible. Note their location in the shop."
+    
+    try:
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"scan-{uuid.uuid4()}",
+            system_message=system_prompt
+        ).with_model("openai", "gpt-4o")
+        
+        # Create message with image
+        image_content = ImageContent(image_base64=data.image_base64)
+        user_message = UserMessage(text=user_prompt, file_contents=[image_content])
+        
+        response = await chat.send_message(user_message)
+        
+        # Parse the response
+        import json
+        import re
+        
+        # Extract JSON from response
+        json_match = re.search(r'\{[\s\S]*\}', response)
+        if not json_match:
+            raise HTTPException(status_code=500, detail="Failed to parse AI response")
+        
+        result_data = json.loads(json_match.group())
+        
+        # Build detected items
+        detected_items = []
+        for item in result_data.get("items", []):
+            detected_items.append(DetectedItem(
+                name=item.get("name", "Unknown"),
+                name_np=item.get("name_np"),
+                category=item.get("category", "other"),
+                count=item.get("count", 0),
+                confidence=item.get("confidence", "medium"),
+                location_hint=item.get("location_hint")
+            ))
+        
+        # Match with existing products
+        matched_products = []
+        for item in detected_items:
+            # Find best match in existing products
+            for product in existing_products:
+                if item.name.lower() in product["name_en"].lower() or product["name_en"].lower() in item.name.lower():
+                    matched_products.append({
+                        "detected_name": item.name,
+                        "detected_count": item.count,
+                        "product_id": product["id"],
+                        "product_name": product["name_en"],
+                        "current_stock": product["quantity"],
+                        "difference": item.count - product["quantity"]
+                    })
+                    break
+        
+        scan_result = ScanResult(
+            mode=data.mode,
+            detected_items=detected_items,
+            total_items_counted=result_data.get("total_counted", sum(i.count for i in detected_items)),
+            scan_notes=result_data.get("notes", ""),
+            matched_products=matched_products
+        )
+        
+        # Save scan to database
+        await db.scans.insert_one(scan_result.model_dump())
+        
+        return scan_result
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON parse error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to parse AI response")
+    except Exception as e:
+        logger.error(f"Scan error: {e}")
+        raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
+
+@api_router.post("/scan/update-stock")
+async def update_stock_from_scan(updates: List[dict], shop_id: str = Depends(get_current_shop)):
+    """Update product stock based on scan results"""
+    updated = []
+    for update in updates:
+        product_id = update.get("product_id")
+        new_quantity = update.get("new_quantity")
+        
+        if product_id and new_quantity is not None:
+            await db.products.update_one(
+                {"id": product_id},
+                {"$set": {"quantity": new_quantity, "updated_at": datetime.now(timezone.utc)}}
+            )
+            updated.append(product_id)
+    
+    return {"message": f"Updated {len(updated)} products", "updated_ids": updated}
+
+@api_router.get("/scans", response_model=List[ScanResult])
+async def get_scan_history(limit: int = 10, shop_id: str = Depends(get_current_shop)):
+    """Get recent scan history"""
+    scans = await db.scans.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return [ScanResult(**s) for s in scans]
+
 # ============ ROOT ============
 
 @api_router.get("/")
 async def root():
-    return {"message": "Pasal Sathi API - पसल साथी", "version": "1.0.0"}
+    return {"message": "Pasal Sathi API - पसल साथी", "version": "1.1.0"}
 
 # Include router and middleware
 app.include_router(api_router)
