@@ -116,6 +116,12 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 - Inventory report (Excel)
 - Summary statistics
 
+### PWA Support
+- Installable on Android/iOS
+- Offline page for no connectivity
+- App icons and manifest
+- Service worker for caching
+
 ### Supplier Management
 - Add/Edit/Delete suppliers
 - Phone and address storage
