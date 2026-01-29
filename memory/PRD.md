@@ -37,6 +37,7 @@ Build a web-based shop management system for a traditional Nepali utensil kiosk 
 3. `sales` - Transaction records with items, payment type
 4. `suppliers` - Vendor information
 5. `purchases` - Stock purchase history
+6. `scans` - AI scan history and results
 
 ---
 
