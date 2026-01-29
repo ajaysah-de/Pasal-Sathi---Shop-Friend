@@ -608,23 +608,32 @@ export default function Scanner() {
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-2 pt-4 border-t">
+            <div className="pt-4 border-t space-y-2">
+              {/* Update Stock Button - Only for MATCHED products */}
+              {scanResult.matched_products.length > 0 && Object.values(selectedUpdates).some(u => u.selected) && (
+                <button
+                  onClick={applyUpdates}
+                  className="w-full p-3 bg-[#8B0000] text-white rounded-xl font-medium flex items-center justify-center gap-2"
+                  data-testid="apply-updates-btn"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                  Update {Object.values(selectedUpdates).filter(u => u.selected).length} Existing Product(s)
+                </button>
+              )}
+              
+              {/* Info text */}
+              {unmatchedItems.length > 0 && (
+                <p className="text-xs text-center text-gray-500">
+                  Click "Add" next to new items above to add them to inventory
+                </p>
+              )}
+              
               <button
                 onClick={() => setShowResults(false)}
-                className="flex-1 p-3 bg-gray-100 text-gray-700 rounded-xl font-medium"
+                className="w-full p-3 bg-gray-100 text-gray-700 rounded-xl font-medium"
               >
                 Close / बन्द
               </button>
-              {scanResult.matched_products.length > 0 && (
-                <button
-                  onClick={applyUpdates}
-                  className="flex-1 p-3 bg-[#8B0000] text-white rounded-xl font-medium flex items-center justify-center gap-2"
-                  data-testid="apply-updates-btn"
-                >
-                  <Check className="w-5 h-5" />
-                  Update Stock
-                </button>
-              )}
             </div>
           </div>
         )}
