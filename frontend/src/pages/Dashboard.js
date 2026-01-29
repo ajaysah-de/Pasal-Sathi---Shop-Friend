@@ -148,6 +148,32 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* AI Scanner Feature - NEW */}
+        <div className="bg-gradient-to-r from-[#8B0000] to-[#6B0000] rounded-2xl p-4 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <Camera className="w-5 h-5" />
+                AI Stock Scanner
+              </h3>
+              <p className="text-sm text-white/80 mt-1">
+                Take a photo to count inventory automatically
+              </p>
+              <p className="text-xs text-white/60 font-nepali mt-1">
+                तस्वीर लिएर स्टक गण्नुहोस्
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/scanner')}
+              className="px-4 py-3 bg-white text-[#8B0000] rounded-xl font-bold flex items-center gap-2 active:scale-95 transition-transform"
+              data-testid="quick-scanner"
+            >
+              <ScanLine className="w-5 h-5" />
+              Scan Now
+            </button>
+          </div>
+        </div>
+
         {/* Recent Sales */}
         {todaySales?.recent?.length > 0 && (
           <div>
