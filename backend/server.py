@@ -668,13 +668,14 @@ class ScanResult(BaseModel):
 @api_router.post("/scan/analyze", response_model=ScanResult)
 async def analyze_inventory_image(data: ScanImageRequest, shop_id: str = Depends(get_current_shop)):
     """Analyze image using GPT-4o to count and identify products"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+    import openai
     import json
     import re
     
-    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    # Support both EMERGENT_LLM_KEY and OPENAI_API_KEY
+    api_key = os.environ.get('OPENAI_API_KEY') or os.environ.get('EMERGENT_LLM_KEY')
     if not api_key:
-        raise HTTPException(status_code=500, detail="AI service not configured")
+        raise HTTPException(status_code=500, detail="AI service not configured. Set OPENAI_API_KEY.")
     
     # Get existing products for matching
     existing_products = await db.products.find({"is_active": True}, {"_id": 0}).to_list(500)
@@ -721,21 +722,33 @@ Respond ONLY in this JSON format:
         user_prompt = "Identify and count all visible products. Match them to existing inventory if possible. Note their location in the shop."
     
     try:
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"scan-{uuid.uuid4()}",
-            system_message=system_prompt
-        ).with_model("openai", "gpt-4o")
+        # Use OpenAI SDK directly
+        client = openai.OpenAI(api_key=api_key)
         
-        # Create message with image
-        image_content = ImageContent(image_base64=data.image_base64)
-        user_message = UserMessage(text=user_prompt, file_contents=[image_content])
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": user_prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{data.image_base64}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=2000
+        )
         
-        response = await chat.send_message(user_message)
+        response_text = response.choices[0].message.content
         
-        # Parse the response
         # Extract JSON from response
-        json_match = re.search(r'\{[\s\S]*\}', response)
+        json_match = re.search(r'\{[\s\S]*\}', response_text)
         if not json_match:
             raise HTTPException(status_code=500, detail="Failed to parse AI response")
         
