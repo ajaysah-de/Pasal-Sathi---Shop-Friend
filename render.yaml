@@ -21,4 +21,4 @@ services:
       - key: EMERGENT_LLM_KEY
         sync: false  # Your Emergent LLM key for AI scanning
       - key: PYTHON_VERSION
-        value: "3.11"
+        value: "3.11.9"
