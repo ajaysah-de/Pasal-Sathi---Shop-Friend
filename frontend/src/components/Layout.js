@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid, Package, ShoppingCart, FileText, Settings, AlertTriangle } from 'lucide-react';
+import { LayoutGrid, Package, ShoppingCart, FileText, Settings, AlertTriangle, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
@@ -12,7 +12,7 @@ const navItems = [
 
 export default function Layout({ children, lowStockCount = 0 }) {
   const location = useLocation();
-  const { shopName, shopNameEn } = useAuth();
+  const { shopName, shopNameEn, userName, userRole } = useAuth();
 
   return (
     <div className="min-h-screen bg-[#F9F9F5] pb-24">
@@ -24,16 +24,26 @@ export default function Layout({ children, lowStockCount = 0 }) {
             <p className="text-xs text-gray-500">{shopNameEn || 'Pasal Sathi'}</p>
           </div>
           
-          {lowStockCount > 0 && (
-            <NavLink 
-              to="/inventory?filter=low-stock" 
-              className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-sm"
-              data-testid="low-stock-alert-btn"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              <span>{lowStockCount}</span>
-            </NavLink>
-          )}
+          <div className="flex items-center gap-2">
+            {userName && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-full">
+                <User className="w-3.5 h-3.5 text-gray-600" />
+                <span className="text-xs font-medium text-gray-700">{userName}</span>
+                <span className="text-xs text-gray-500 capitalize">({userRole})</span>
+              </div>
+            )}
+            
+            {lowStockCount > 0 && (
+              <NavLink 
+                to="/inventory?filter=low-stock" 
+                className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-sm"
+                data-testid="low-stock-alert-btn"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span>{lowStockCount}</span>
+              </NavLink>
+            )}
+          </div>
         </div>
       </header>
 

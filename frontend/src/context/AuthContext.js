@@ -15,6 +15,12 @@ export function AuthProvider({ children }) {
   const [shopNameEn, setShopNameEn] = useState(
     localStorage.getItem("shop_name_en") || "",
   );
+  const [userName, setUserName] = useState(
+    localStorage.getItem("user_name") || "",
+  );
+  const [userRole, setUserRole] = useState(
+    localStorage.getItem("user_role") || "",
+  );
   const [isSetup, setIsSetup] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,27 +51,35 @@ export function AuthProvider({ children }) {
       shop_name_en: shopNameEnglish,
     });
 
-    const { access_token, shop_name, shop_name_en } = res.data;
+    const { access_token, shop_name, shop_name_en, user_name, user_role } = res.data;
     localStorage.setItem("pasal_token", access_token);
     localStorage.setItem("shop_name", shop_name);
     localStorage.setItem("shop_name_en", shop_name_en);
+    localStorage.setItem("user_name", user_name);
+    localStorage.setItem("user_role", user_role);
     setToken(access_token);
     setShopName(shop_name);
     setShopNameEn(shop_name_en);
+    setUserName(user_name);
+    setUserRole(user_role);
     setIsSetup(true);
     return res.data;
   };
 
-  const login = async (pin) => {
-    const res = await axios.post(`${API}/auth/login`, { pin });
+  const loginWithUser = async (userId, pin) => {
+    const res = await axios.post(`${API}/auth/login`, { user_id: userId, pin });
 
-    const { access_token, shop_name, shop_name_en } = res.data;
+    const { access_token, shop_name, shop_name_en, user_name, user_role } = res.data;
     localStorage.setItem("pasal_token", access_token);
     localStorage.setItem("shop_name", shop_name);
     localStorage.setItem("shop_name_en", shop_name_en);
+    localStorage.setItem("user_name", user_name);
+    localStorage.setItem("user_role", user_role);
     setToken(access_token);
     setShopName(shop_name);
     setShopNameEn(shop_name_en);
+    setUserName(user_name);
+    setUserRole(user_role);
     return res.data;
   };
 
@@ -73,9 +87,13 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("pasal_token");
     localStorage.removeItem("shop_name");
     localStorage.removeItem("shop_name_en");
+    localStorage.removeItem("user_name");
+    localStorage.removeItem("user_role");
     setToken(null);
     setShopName("");
     setShopNameEn("");
+    setUserName("");
+    setUserRole("");
   };
 
   const getAuthHeader = () => ({
@@ -86,11 +104,13 @@ export function AuthProvider({ children }) {
     token,
     shopName,
     shopNameEn,
+    userName,
+    userRole,
     isSetup,
     loading,
     isAuthenticated: !!token,
     setupShop,
-    login,
+    loginWithUser,
     logout,
     getAuthHeader,
     checkSetup,

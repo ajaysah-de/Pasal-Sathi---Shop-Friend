@@ -46,20 +46,61 @@ export default function Scanner() {
   // Start camera stream
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error("Camera not supported on this browser");
+        return;
+      }
+
+      // Stop any existing stream first
+      stopCamera();
+
+      // Request camera with iOS-compatible constraints
+      const constraints = {
         video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920, max: 1920 },
+          height: { ideal: 1080, max: 1080 },
         },
-      });
+        audio: false,
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        
+        // iOS requires play() to be called explicitly
+        videoRef.current.setAttribute('playsinline', 'true');
+        videoRef.current.setAttribute('autoplay', 'true');
+        videoRef.current.setAttribute('muted', 'true');
+        
+        // Wait for video to be ready
+        await new Promise((resolve) => {
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current.play();
+            resolve();
+          };
+        });
+        
         setIsStreaming(true);
+        toast.success("Camera ready! / क्यामेरा तयार!");
       }
     } catch (err) {
       console.error("Camera error:", err);
-      toast.error("Could not access camera. Please allow camera permission.");
+      let errorMessage = "Could not access camera";
+      
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        errorMessage = "Camera permission denied. Please allow camera access in Settings.";
+      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+        errorMessage = "No camera found on this device";
+      } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+        errorMessage = "Camera is already in use by another app";
+      } else if (err.name === "OverconstrainedError") {
+        errorMessage = "Camera does not support required settings";
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -363,7 +404,9 @@ export default function Scanner() {
                 ref={videoRef}
                 autoPlay
                 playsInline
+                muted
                 className="w-full rounded-xl bg-black"
+                style={{ maxHeight: '60vh' }}
               />
               <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
                 <button

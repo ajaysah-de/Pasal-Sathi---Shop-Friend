@@ -13,7 +13,6 @@ import {
 import Layout from "../components/Layout";
 import ProductCard from "../components/ProductCard";
 import { useAuth } from "../context/AuthContext";
-import { CATEGORIES, LOCATIONS } from "../lib/utils";
 import { toast } from "sonner";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, "") || "";
@@ -32,14 +31,31 @@ export default function Inventory() {
     searchParams.get("filter") === "low-stock",
   );
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
   useEffect(() => {
     filterProducts();
   }, [products, search, selectedCategory, showLowStock]);
+
+  const fetchData = async () => {
+    try {
+      const [productsRes, categoriesRes] = await Promise.all([
+        axios.get(`${API}/products`, getAuthHeader()),
+        axios.get(`${API}/categories`, getAuthHeader()),
+      ]);
+      setProducts(productsRes.data);
+      setCategories(categoriesRes.data);
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+      toast.error("Failed to load inventory");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -80,9 +96,9 @@ export default function Inventory() {
     navigate(`/inventory/${product.id}`);
   };
 
-  const categories = [
+  const categoryList = [
     { id: "all", name_en: "All Items", name_np: "सबै" },
-    ...Object.entries(CATEGORIES).map(([id, cat]) => ({ id, ...cat })),
+    ...categories,
   ];
 
   return (
@@ -108,7 +124,7 @@ export default function Inventory() {
 
         {/* Category Pills */}
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-          {categories.map((cat) => (
+          {categoryList.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}

@@ -73,6 +73,22 @@ export default function Reports() {
     .filter((s) => s.payment_type === "credit")
     .reduce((sum, s) => sum + s.total, 0);
 
+  // Group sales by user
+  const salesByUser = sales.reduce((acc, sale) => {
+    const userName = sale.user_name || "Unknown";
+    if (!acc[userName]) {
+      acc[userName] = { count: 0, total: 0, cash: 0, credit: 0 };
+    }
+    acc[userName].count += 1;
+    acc[userName].total += sale.total;
+    if (sale.payment_type === "cash") {
+      acc[userName].cash += sale.total;
+    } else {
+      acc[userName].credit += sale.total;
+    }
+    return acc;
+  }, {});
+
   const handleExport = async (type, format) => {
     setExporting(true);
     try {
@@ -212,6 +228,52 @@ export default function Reports() {
               </div>
             </div>
 
+            {/* Sales by User Summary */}
+            {Object.keys(salesByUser).length > 1 && (
+              <div className="bg-white rounded-xl p-4 border border-gray-100">
+                <h3 className="font-semibold text-sm mb-3 text-gray-700">
+                  Sales by User / प्रयोगकर्ता अनुसार बिक्री
+                </h3>
+                <div className="space-y-2">
+                  {Object.entries(salesByUser).map(([userName, data]) => (
+                    <div
+                      key={userName}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-[#8B0000] rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">
+                            {userName.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{userName}</p>
+                          <p className="text-xs text-gray-500">
+                            {data.count} transactions
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-[#8B0000]">
+                          {formatNPR(data.total)}
+                        </p>
+                        <div className="flex gap-1 text-xs">
+                          <span className="text-green-600">
+                            Cash: {formatNPR(data.cash)}
+                          </span>
+                          {data.credit > 0 && (
+                            <span className="text-orange-600">
+                              Credit: {formatNPR(data.credit)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Sales List */}
             {loading ? (
               <div className="flex justify-center py-8">
@@ -264,6 +326,11 @@ export default function Reports() {
                     {sale.customer_name && (
                       <p className="text-xs text-gray-500">
                         Customer: {sale.customer_name}
+                      </p>
+                    )}
+                    {sale.user_name && (
+                      <p className="text-xs text-gray-400">
+                        Sold by: {sale.user_name}
                       </p>
                     )}
                   </div>

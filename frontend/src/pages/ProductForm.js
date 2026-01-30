@@ -11,10 +11,12 @@ import {
   Hash,
   AlertTriangle,
   Truck,
+  Languages,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { CATEGORIES, LOCATIONS, formatNPR } from "../lib/utils";
+import { formatNPR } from "../lib/utils";
 import { toast } from "sonner";
+import romanizeToNepali from "../lib/romanization";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, "") || "";
 const API = `${API_BASE}/api`;
@@ -28,12 +30,14 @@ export default function ProductForm() {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [locations, setLocations] = useState([]);
 
   const [form, setForm] = useState({
     name_en: "",
     name_np: "",
-    category: "steel",
-    location: "shelf_top",
+    category: "",
+    location: "",
     cost_price: "",
     selling_price: "",
     quantity: "",
@@ -43,11 +47,40 @@ export default function ProductForm() {
   });
 
   useEffect(() => {
-    fetchSuppliers();
+    fetchData();
     if (isEdit) {
       fetchProduct();
     }
   }, [id]);
+
+  const fetchData = async () => {
+    try {
+      const [suppliersRes, categoriesRes, locationsRes] = await Promise.all([
+        axios.get(`${API}/suppliers`, getAuthHeader()),
+        axios.get(`${API}/categories`, getAuthHeader()),
+        axios.get(`${API}/locations`, getAuthHeader()),
+      ]);
+      setSuppliers(suppliersRes.data);
+      setCategories(categoriesRes.data);
+      setLocations(locationsRes.data);
+
+      // Set default category and location if not editing
+      if (
+        !isEdit &&
+        categoriesRes.data.length > 0 &&
+        locationsRes.data.length > 0
+      ) {
+        setForm((prev) => ({
+          ...prev,
+          category: categoriesRes.data[0].id,
+          location: locationsRes.data[0].id,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+      toast.error("Failed to load form data");
+    }
+  };
 
   const fetchSuppliers = async () => {
     try {
@@ -148,6 +181,23 @@ export default function ProductForm() {
     }
   };
 
+  // Romanization - Convert romanized text to Nepali
+  const handleConvertToNepali = () => {
+    const romanized = form.name_en.trim();
+    if (!romanized) {
+      toast.error("Enter romanized text first (e.g., 'steel thali')");
+      return;
+    }
+    
+    const nepali = romanizeToNepali(romanized);
+    if (nepali) {
+      setForm(prev => ({ ...prev, name_np: nepali }));
+      toast.success(`Converted: ${nepali}`);
+    } else {
+      toast.error("Could not convert. Try typing manually.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F9F9F5] flex items-center justify-center">
@@ -204,30 +254,47 @@ export default function ProductForm() {
 
           <div>
             <label className="text-sm text-gray-500 mb-1 block">
-              English Name *
+              English Name * (or type romanized: steel thali)
             </label>
             <input
               type="text"
               value={form.name_en}
               onChange={(e) => handleChange("name_en", e.target.value)}
-              placeholder="Steel Plate Large"
+              placeholder="Steel Plate Large (or: steel thali thulo)"
               className="w-full h-12 px-4 border border-gray-300 rounded-xl"
               data-testid="name-en-input"
             />
+            <p className="text-xs text-gray-400 mt-1">
+              💡 Type in romanized Nepali and click convert (e.g., "thali" → "थाली")
+            </p>
           </div>
 
           <div>
-            <label className="text-sm text-gray-500 mb-1 block">
+            <label className="text-sm text-gray-500 mb-1 block font-nepali">
               नेपाली नाम
             </label>
-            <input
-              type="text"
-              value={form.name_np}
-              onChange={(e) => handleChange("name_np", e.target.value)}
-              placeholder="स्टिल थाली ठूलो"
-              className="w-full h-12 px-4 border border-gray-300 rounded-xl font-nepali"
-              data-testid="name-np-input"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={form.name_np}
+                onChange={(e) => handleChange("name_np", e.target.value)}
+                placeholder="स्टिल थाली ठूलो"
+                className="flex-1 h-12 px-4 border border-gray-300 rounded-xl font-nepali"
+                data-testid="name-np-input"
+              />
+              <button
+                type="button"
+                onClick={handleConvertToNepali}
+                className="px-4 h-12 bg-blue-500 text-white rounded-xl hover:bg-blue-600 flex items-center gap-2 shrink-0"
+                title="Convert romanized text to Nepali"
+              >
+                <Languages className="w-4 h-4" />
+                <span className="text-sm font-medium">Convert</span>
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Click "Convert" to change romanized text to Nepali script
+            </p>
           </div>
         </div>
 
@@ -248,8 +315,8 @@ export default function ProductForm() {
               className="w-full h-12 px-4 border border-gray-300 rounded-xl bg-white"
               data-testid="category-select"
             >
-              {Object.entries(CATEGORIES).map(([id, cat]) => (
-                <option key={id} value={id}>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
                   {cat.name_en} / {cat.name_np}
                 </option>
               ))}
@@ -266,8 +333,8 @@ export default function ProductForm() {
               className="w-full h-12 px-4 border border-gray-300 rounded-xl bg-white"
               data-testid="location-select"
             >
-              {Object.entries(LOCATIONS).map(([id, loc]) => (
-                <option key={id} value={id}>
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.id}>
                   {loc.name_en} / {loc.name_np}
                 </option>
               ))}

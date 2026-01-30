@@ -46,17 +46,40 @@ class ShopConfig(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     shop_name: str = "मेरो पसल"
     shop_name_en: str = "My Shop"
-    pin_hash: str
+    pin_hash: str  # Legacy - for backward compatibility
     owner_name: str = ""
     phone: str = ""
     address: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class User(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    pin_hash: str
+    role: str = "cashier"  # owner, manager, cashier
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserCreate(BaseModel):
+    name: str
+    pin: str
+    role: Optional[str] = "cashier"
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    pin: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
 class PINSetup(BaseModel):
     pin: str
     shop_name: Optional[str] = "मेरो पसल"
     shop_name_en: Optional[str] = "My Shop"
+
+class LoginRequest(BaseModel):
+    user_id: str
+    pin: str
 
 class PINVerify(BaseModel):
     pin: str
@@ -66,8 +89,48 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     shop_name: str
     shop_name_en: str
+    user_name: str
+    user_role: str
 
-# Product Categories
+class Category(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name_en: str
+    name_np: str
+    icon: str
+    color: str = "#6B7280"
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CategoryCreate(BaseModel):
+    name_en: str
+    name_np: str
+    icon: str
+    color: Optional[str] = "#6B7280"
+
+class Location(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name_en: str
+    name_np: str
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class LocationCreate(BaseModel):
+    name_en: str
+    name_np: str
+
+# Default Product Categories
+def get_default_categories():
+    return [
+    {"id": "steel", "name_en": "Steel Utensils", "name_np": "स्टिल भाँडा", "icon": "pot-steaming", "color": "#6B7280", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "brass", "name_en": "Brass & Religious", "name_np": "पीतल/पूजा सामान", "icon": "lamp", "color": "#D4AF37", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "plastic", "name_en": "Plastic Items", "name_np": "प्लास्टिक सामान", "icon": "cup-soda", "color": "#3B82F6", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "electric", "name_en": "Electric Items", "name_np": "बिजुली सामान", "icon": "zap", "color": "#F59E0B", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "cleaning", "name_en": "Cleaning Tools", "name_np": "सफाई सामान", "icon": "brush", "color": "#10B981", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "boxed", "name_en": "Boxed Items", "name_np": "बक्स सामान", "icon": "package", "color": "#8B5CF6", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "other", "name_en": "Other Items", "name_np": "अन्य सामान", "icon": "grid-3x3", "color": "#6B7280", "is_active": True, "created_at": datetime.now(timezone.utc)}
+]
+
+# Kept for backward compatibility
 CATEGORIES = [
     {"id": "steel", "name_en": "Steel Utensils", "name_np": "स्टिल भाँडा", "icon": "pot-steaming"},
     {"id": "brass", "name_en": "Brass & Religious", "name_np": "पीतल/पूजा सामान", "icon": "lamp"},
@@ -78,6 +141,18 @@ CATEGORIES = [
     {"id": "other", "name_en": "Other Items", "name_np": "अन्य सामान", "icon": "grid-3x3"}
 ]
 
+# Default Locations
+def get_default_locations():
+    return [
+    {"id": "hanging", "name_en": "Hanging", "name_np": "झुण्डिएको", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "shelf_top", "name_en": "Top Shelf", "name_np": "माथि शेल्फ", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "shelf_bottom", "name_en": "Bottom Shelf", "name_np": "तल शेल्फ", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "front_display", "name_en": "Front Display", "name_np": "अगाडि राखेको", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "storage", "name_en": "Storage Room", "name_np": "गोदाम", "is_active": True, "created_at": datetime.now(timezone.utc)},
+    {"id": "counter", "name_en": "Counter", "name_np": "काउन्टर", "is_active": True, "created_at": datetime.now(timezone.utc)}
+]
+
+# Kept for backward compatibility
 LOCATIONS = [
     {"id": "hanging", "name_en": "Hanging", "name_np": "झुण्डिएको"},
     {"id": "shelf_top", "name_en": "Top Shelf", "name_np": "माथि शेल्फ"},
@@ -145,6 +220,8 @@ class Sale(BaseModel):
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
     notes: Optional[str] = None
+    user_id: Optional[str] = None  # User who made the sale
+    user_name: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class SaleCreate(BaseModel):
@@ -199,9 +276,9 @@ def hash_pin(pin: str) -> str:
 def verify_pin(pin: str, hashed: str) -> bool:
     return bcrypt.checkpw(pin.encode(), hashed.encode())
 
-def create_token(shop_id: str) -> str:
+def create_token(shop_id: str, user_id: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
-    to_encode = {"sub": shop_id, "exp": expire}
+    to_encode = {"sub": shop_id, "user_id": user_id, "exp": expire}
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 async def get_current_shop(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -213,6 +290,21 @@ async def get_current_shop(credentials: HTTPAuthorizationCredentials = Depends(s
         if shop_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         return shop_id
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user = await db.users.find_one({"id": user_id, "is_active": True}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        return User(**user)
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -240,41 +332,239 @@ async def setup_shop(data: PINSetup):
         shop_name_en=data.shop_name_en or "My Shop"
     )
     await db.shop_config.insert_one(config.model_dump())
-    token = create_token(config.id)
-    return TokenResponse(access_token=token, shop_name=config.shop_name, shop_name_en=config.shop_name_en)
+    
+    # Create default owner user
+    owner = User(
+        name="Owner / मालिक",
+        pin_hash=hash_pin(data.pin),
+        role="owner"
+    )
+    await db.users.insert_one(owner.model_dump())
+    
+    # Initialize default categories and locations
+    await db.categories.insert_many(get_default_categories())
+    await db.locations.insert_many(get_default_locations())
+    
+    token = create_token(config.id, owner.id)
+    return TokenResponse(
+        access_token=token, 
+        shop_name=config.shop_name, 
+        shop_name_en=config.shop_name_en,
+        user_name=owner.name,
+        user_role=owner.role
+    )
 
-@api_router.post("/auth/login", response_model=TokenResponse)
-async def login(data: PINVerify):
-    """Login with PIN"""
+@api_router.get("/auth/users")
+async def get_users_for_login():
+    """Get list of users for login (without requiring auth)"""
     config = await db.shop_config.find_one({}, {"_id": 0})
     if not config:
         raise HTTPException(status_code=404, detail="Shop not configured")
     
-    if not verify_pin(data.pin, config["pin_hash"]):
+    users = await db.users.find({"is_active": True}, {"_id": 0, "pin_hash": 0}).to_list(50)
+    return {"users": users, "shop_name": config["shop_name"]}
+
+@api_router.post("/auth/login", response_model=TokenResponse)
+async def login(data: LoginRequest):
+    """Login with user ID and PIN"""
+    config = await db.shop_config.find_one({}, {"_id": 0})
+    if not config:
+        raise HTTPException(status_code=404, detail="Shop not configured")
+    
+    user = await db.users.find_one({"id": data.user_id, "is_active": True}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if not verify_pin(data.pin, user["pin_hash"]):
         raise HTTPException(status_code=401, detail="Invalid PIN")
     
-    token = create_token(config["id"])
-    return TokenResponse(access_token=token, shop_name=config["shop_name"], shop_name_en=config["shop_name_en"])
+    token = create_token(config["id"], user["id"])
+    return TokenResponse(
+        access_token=token, 
+        shop_name=config["shop_name"], 
+        shop_name_en=config["shop_name_en"],
+        user_name=user["name"],
+        user_role=user["role"]
+    )
 
 @api_router.put("/auth/pin")
-async def change_pin(old_pin: str, new_pin: str, shop_id: str = Depends(get_current_shop)):
-    """Change PIN"""
-    config = await db.shop_config.find_one({}, {"_id": 0})
-    if not verify_pin(old_pin, config["pin_hash"]):
+async def change_pin(old_pin: str, new_pin: str, user: User = Depends(get_current_user)):
+    """Change PIN for current user"""
+    if not verify_pin(old_pin, user.pin_hash):
         raise HTTPException(status_code=401, detail="Invalid old PIN")
     
-    await db.shop_config.update_one({}, {"$set": {"pin_hash": hash_pin(new_pin), "updated_at": datetime.now(timezone.utc)}})
+    if len(new_pin) < 4 or len(new_pin) > 6:
+        raise HTTPException(status_code=400, detail="PIN must be 4-6 digits")
+    
+    await db.users.update_one(
+        {"id": user.id}, 
+        {"$set": {"pin_hash": hash_pin(new_pin)}}
+    )
     return {"message": "PIN changed successfully"}
+
+# ============ USER MANAGEMENT ============
+
+@api_router.get("/users", response_model=List[User])
+async def get_users(user: User = Depends(get_current_user)):
+    """Get all users (only owner/manager can see)"""
+    if user.role not in ["owner", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    users = await db.users.find({"is_active": True}, {"_id": 0}).to_list(50)
+    return [User(**u) for u in users]
+
+@api_router.post("/users", response_model=User)
+async def create_user(data: UserCreate, user: User = Depends(get_current_user)):
+    """Create new user (only owner can create)"""
+    if user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owner can create users")
+    
+    if len(data.pin) < 4 or len(data.pin) > 6:
+        raise HTTPException(status_code=400, detail="PIN must be 4-6 digits")
+    
+    new_user = User(
+        name=data.name,
+        pin_hash=hash_pin(data.pin),
+        role=data.role or "cashier"
+    )
+    await db.users.insert_one(new_user.model_dump())
+    return new_user
+
+@api_router.put("/users/{user_id}", response_model=User)
+async def update_user(user_id: str, data: UserUpdate, user: User = Depends(get_current_user)):
+    """Update user (only owner can update)"""
+    if user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owner can update users")
+    
+    update_data = {}
+    if data.name:
+        update_data["name"] = data.name
+    if data.pin:
+        if len(data.pin) < 4 or len(data.pin) > 6:
+            raise HTTPException(status_code=400, detail="PIN must be 4-6 digits")
+        update_data["pin_hash"] = hash_pin(data.pin)
+    if data.role:
+        update_data["role"] = data.role
+    if data.is_active is not None:
+        update_data["is_active"] = data.is_active
+    
+    result = await db.users.find_one_and_update(
+        {"id": user_id},
+        {"$set": update_data},
+        return_document=True
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="User not found")
+    result.pop("_id", None)
+    return User(**result)
+
+@api_router.delete("/users/{user_id}")
+async def delete_user(user_id: str, user: User = Depends(get_current_user)):
+    """Deactivate user (only owner can delete)"""
+    if user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only owner can delete users")
+    
+    if user_id == user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    
+    await db.users.update_one({"id": user_id}, {"$set": {"is_active": False}})
+    return {"message": "User deactivated"}
 
 # ============ CATEGORIES & LOCATIONS ============
 
-@api_router.get("/categories")
-async def get_categories():
-    return CATEGORIES
+@api_router.post("/categories/initialize")
+async def initialize_categories(shop_id: str = Depends(get_current_shop)):
+    """Initialize default categories if none exist"""
+    count = await db.categories.count_documents({})
+    if count == 0:
+        await db.categories.insert_many(get_default_categories())
+        return {"message": "Default categories initialized", "count": 7}
+    return {"message": "Categories already exist", "count": count}
 
-@api_router.get("/locations")
-async def get_locations():
-    return LOCATIONS
+@api_router.get("/categories", response_model=List[Category])
+async def get_categories(shop_id: str = Depends(get_current_shop)):
+    categories = await db.categories.find({"is_active": True}, {"_id": 0}).sort("name_en", 1).to_list(100)
+    # Auto-initialize if empty
+    if not categories:
+        await db.categories.insert_many(get_default_categories())
+        categories = await db.categories.find({"is_active": True}, {"_id": 0}).sort("name_en", 1).to_list(100)
+    return [Category(**c) for c in categories]
+
+@api_router.post("/categories", response_model=Category)
+async def create_category(data: CategoryCreate, shop_id: str = Depends(get_current_shop)):
+    category = Category(**data.model_dump())
+    await db.categories.insert_one(category.model_dump())
+    return category
+
+@api_router.put("/categories/{category_id}", response_model=Category)
+async def update_category(category_id: str, data: CategoryCreate, shop_id: str = Depends(get_current_shop)):
+    update_data = data.model_dump()
+    result = await db.categories.find_one_and_update(
+        {"id": category_id},
+        {"$set": update_data},
+        return_document=True
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Category not found")
+    result.pop("_id", None)
+    return Category(**result)
+
+@api_router.delete("/categories/{category_id}")
+async def delete_category(category_id: str, shop_id: str = Depends(get_current_shop)):
+    # Check if any products use this category
+    products_count = await db.products.count_documents({"category": category_id, "is_active": True})
+    if products_count > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete category. {products_count} products are using it.")
+    
+    await db.categories.update_one({"id": category_id}, {"$set": {"is_active": False}})
+    return {"message": "Category deleted"}
+
+@api_router.post("/locations/initialize")
+async def initialize_locations(shop_id: str = Depends(get_current_shop)):
+    """Initialize default locations if none exist"""
+    count = await db.locations.count_documents({})
+    if count == 0:
+        await db.locations.insert_many(get_default_locations())
+        return {"message": "Default locations initialized", "count": 6}
+    return {"message": "Locations already exist", "count": count}
+
+@api_router.get("/locations", response_model=List[Location])
+async def get_locations(shop_id: str = Depends(get_current_shop)):
+    locations = await db.locations.find({"is_active": True}, {"_id": 0}).sort("name_en", 1).to_list(100)
+    # Auto-initialize if empty
+    if not locations:
+        await db.locations.insert_many(get_default_locations())
+        locations = await db.locations.find({"is_active": True}, {"_id": 0}).sort("name_en", 1).to_list(100)
+    return [Location(**l) for l in locations]
+
+@api_router.post("/locations", response_model=Location)
+async def create_location(data: LocationCreate, shop_id: str = Depends(get_current_shop)):
+    location = Location(**data.model_dump())
+    await db.locations.insert_one(location.model_dump())
+    return location
+
+@api_router.put("/locations/{location_id}", response_model=Location)
+async def update_location(location_id: str, data: LocationCreate, shop_id: str = Depends(get_current_shop)):
+    update_data = data.model_dump()
+    result = await db.locations.find_one_and_update(
+        {"id": location_id},
+        {"$set": update_data},
+        return_document=True
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Location not found")
+    result.pop("_id", None)
+    return Location(**result)
+
+@api_router.delete("/locations/{location_id}")
+async def delete_location(location_id: str, shop_id: str = Depends(get_current_shop)):
+    # Check if any products use this location
+    products_count = await db.products.count_documents({"location": location_id, "is_active": True})
+    if products_count > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete location. {products_count} products are using it.")
+    
+    await db.locations.update_one({"id": location_id}, {"$set": {"is_active": False}})
+    return {"message": "Location deleted"}
 
 # ============ PRODUCTS ============
 
@@ -373,8 +663,8 @@ async def get_today_sales(shop_id: str = Depends(get_current_shop)):
     }
 
 @api_router.post("/sales", response_model=Sale)
-async def create_sale(data: SaleCreate, shop_id: str = Depends(get_current_shop)):
-    sale = Sale(**data.model_dump())
+async def create_sale(data: SaleCreate, user: User = Depends(get_current_user)):
+    sale = Sale(**data.model_dump(), user_id=user.id, user_name=user.name)
     await db.sales.insert_one(sale.model_dump())
     
     # Update product quantities
